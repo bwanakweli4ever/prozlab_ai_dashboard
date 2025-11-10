@@ -31,6 +31,35 @@ export const API_BASE_URL = (
   DEV_FORCE_LOCALHOST ? 'https://app.prozlab.com' : (process.env.NEXT_PUBLIC_API_URL || 'https://app.prozlab.com/')
 ).replace(/\/+$/, "")
 
+const FRONTEND_HOSTNAMES = new Set(["prozlab.com", "www.prozlab.com"])
+const DEFAULT_BACKEND_API_BASE = "https://app.prozlab.com"
+
+const getServerBackendBaseUrl = () => {
+  if (typeof window !== "undefined") return API_BASE_URL
+
+  const candidates = [
+    process.env.PROZLAB_BACKEND_URL,
+    process.env.NEXT_PUBLIC_API_URL,
+    DEFAULT_BACKEND_API_BASE,
+  ]
+
+  for (const candidate of candidates) {
+    if (!candidate) continue
+    try {
+      const trimmed = candidate.replace(/\/+$/, "")
+      const parsed = new URL(trimmed)
+      if (FRONTEND_HOSTNAMES.has(parsed.hostname.toLowerCase())) {
+        continue
+      }
+      return trimmed
+    } catch {
+      continue
+    }
+  }
+
+  return DEFAULT_BACKEND_API_BASE
+}
+
 // Helper to append ngrok bypass query param to avoid splash HTML
 const withNgrokBypass = (url: string) => {
   try {
@@ -1449,8 +1478,9 @@ export const prozProfilesApi = {
       const isBrowser = typeof window !== "undefined"
       let response: Response | null = null
 
+      const backendBase = getServerBackendBaseUrl()
       const directUrl = withNgrokBypass(
-        `${API_BASE_URL}/api/v1/proz/public/profiles${queryString ? `?${queryString}` : ""}`,
+        `${backendBase}/api/v1/proz/public/profiles${queryString ? `?${queryString}` : ""}`,
       )
 
       if (isBrowser) {

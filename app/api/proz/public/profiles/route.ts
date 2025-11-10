@@ -1,18 +1,41 @@
 import { NextResponse, type NextRequest } from "next/server"
 
-const getBackendBaseUrl = () => {
-  const candidate =
-    process.env.PROZLAB_BACKEND_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    "https://app.prozlab.com"
+const DEFAULT_BACKEND_URL = "https://app.prozlab.com"
 
-  return candidate.replace(/\/+$/, "")
+const isFrontendHost = (host: string) => {
+  const normalized = host.toLowerCase()
+  return normalized === "prozlab.com" || normalized === "www.prozlab.com"
+}
+
+const getBackendBaseUrl = (requestHost?: string | null) => {
+  const candidates = [
+    process.env.PROZLAB_BACKEND_URL,
+    process.env.NEXT_PUBLIC_API_URL,
+    DEFAULT_BACKEND_URL,
+  ]
+
+  for (const candidate of candidates) {
+    if (!candidate) continue
+
+    try {
+      const trimmed = candidate.replace(/\/+$/, "")
+      const parsed = new URL(trimmed)
+      if (isFrontendHost(parsed.host) && (!requestHost || isFrontendHost(requestHost))) {
+        continue
+      }
+      return trimmed
+    } catch {
+      continue
+    }
+  }
+
+  return DEFAULT_BACKEND_URL
 }
 
 export const dynamic = "force-dynamic"
 
 export async function GET(request: NextRequest) {
-  const backendBaseUrl = getBackendBaseUrl()
+  const backendBaseUrl = getBackendBaseUrl(request.headers.get("host"))
 
   const incomingUrl = new URL(request.url)
   const targetUrl = new URL("/api/v1/proz/public/profiles", backendBaseUrl)
