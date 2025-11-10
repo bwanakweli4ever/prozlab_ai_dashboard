@@ -1445,7 +1445,14 @@ export const prozProfilesApi = {
         }
       })
       
-      const response = await fetch(withNgrokBypass(`${API_BASE_URL}/api/v1/proz/public/profiles?${searchParams}`))
+      const queryString = searchParams.toString()
+      const isBrowser = typeof window !== "undefined"
+      const baseUrl = isBrowser ? "/api/proz/public/profiles" : `${API_BASE_URL}/api/v1/proz/public/profiles`
+      const targetUrl = `${baseUrl}${queryString ? `?${queryString}` : ""}`
+
+      const response = await fetch(isBrowser ? targetUrl : withNgrokBypass(targetUrl), {
+        cache: "no-store",
+      })
       return handleResponse<any>(response)
     } catch (error) {
       console.error("Network error while searching public profiles:", error)
