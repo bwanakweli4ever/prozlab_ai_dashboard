@@ -1,3 +1,5 @@
+import { promises as fs } from "fs"
+import path from "path"
 import { NextResponse, type NextRequest } from "next/server"
 
 const DEFAULT_BACKEND_URL = "https://app.prozlab.com"
@@ -36,6 +38,12 @@ export const dynamic = "force-dynamic"
 
 export async function GET(request: NextRequest) {
   const backendBaseUrl = getBackendBaseUrl(request.headers.get("host"))
+  const fallbackHeaders = new Headers()
+  fallbackHeaders.set("Content-Type", "application/json")
+  fallbackHeaders.set("Cache-Control", "no-store")
+  fallbackHeaders.set("Access-Control-Allow-Origin", "*")
+  fallbackHeaders.set("Access-Control-Allow-Methods", "GET, OPTIONS")
+  fallbackHeaders.set("Access-Control-Allow-Headers", "*")
 
   const incomingUrl = new URL(request.url)
   const targetUrl = new URL("/api/v1/proz/public/profiles", backendBaseUrl)
@@ -56,14 +64,15 @@ export async function GET(request: NextRequest) {
       cache: "no-store",
     })
 
+    if (!response.ok) {
+      console.warn("Upstream public profiles responded with non-OK status:", response.status)
+      throw new Error(`Upstream returned ${response.status}`)
+    }
+
     const responseText = await response.text()
 
-    const headers = new Headers()
+    const headers = new Headers(fallbackHeaders)
     headers.set("Content-Type", response.headers.get("content-type") || "application/json")
-    headers.set("Cache-Control", "no-store")
-    headers.set("Access-Control-Allow-Origin", "*")
-    headers.set("Access-Control-Allow-Methods", "GET, OPTIONS")
-    headers.set("Access-Control-Allow-Headers", "*")
 
     return new NextResponse(responseText, {
       status: response.status,
@@ -72,21 +81,27 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error("Proxy error fetching public profiles:", error)
-    return new NextResponse(
-      JSON.stringify({
-        detail: "Upstream API unavailable",
-      }),
-      {
-        status: 502,
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-store",
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, OPTIONS",
-          "Access-Control-Allow-Headers": "*",
+
+    try {
+      const fallbackPath = path.join(process.cwd(), "proz.json")
+      const fallbackPayload = await fs.readFile(fallbackPath, "utf-8")
+      console.info("Serving fallback public profiles data from proz.json")
+      return new NextResponse(fallbackPayload, {
+        status: 200,
+        headers: fallbackHeaders,
+      })
+    } catch (fallbackError) {
+      console.error("Failed to load fallback public profiles dataset:", fallbackError)
+      return new NextResponse(
+        JSON.stringify({
+          detail: "Upstream API unavailable",
+        }),
+        {
+          status: 502,
+          headers: fallbackHeaders,
         },
-      },
-    )
+      )
+    }
   }
 }
 

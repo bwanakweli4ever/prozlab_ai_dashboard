@@ -1483,6 +1483,15 @@ export const prozProfilesApi = {
         `${backendBase}/api/v1/proz/public/profiles${queryString ? `?${queryString}` : ""}`,
       )
 
+      const buildFallbackResponse = async () => {
+        const fallbackModule = await import("@/proz.json")
+        const fallbackPayload = fallbackModule.default ?? fallbackModule
+        return new Response(JSON.stringify(fallbackPayload), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        })
+      }
+
       if (isBrowser) {
         const proxyUrl = `/api/proz/public/profiles${queryString ? `?${queryString}` : ""}`
 
@@ -1500,10 +1509,21 @@ export const prozProfilesApi = {
       }
 
       if (!response) {
-        response = await fetch(directUrl, {
-          cache: "no-store",
-        })
+        try {
+          response = await fetch(directUrl, {
+            cache: "no-store",
+          })
+        } catch (directError) {
+          console.warn("Direct API fetch error, using fallback dataset:", directError)
+          response = await buildFallbackResponse()
+        }
       }
+
+      if (response && !response.ok) {
+        console.warn("Direct API returned non-OK status, using fallback dataset:", response.status)
+        response = await buildFallbackResponse()
+      }
+
       return handleResponse<any>(response)
     } catch (error) {
       console.error("Network error while searching public profiles:", error)
