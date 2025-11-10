@@ -38,6 +38,9 @@ export async function GET(request: NextRequest) {
     const headers = new Headers()
     headers.set("Content-Type", response.headers.get("content-type") || "application/json")
     headers.set("Cache-Control", "no-store")
+    headers.set("Access-Control-Allow-Origin", "*")
+    headers.set("Access-Control-Allow-Methods", "GET, OPTIONS")
+    headers.set("Access-Control-Allow-Headers", "*")
 
     return new NextResponse(responseText, {
       status: response.status,
@@ -55,6 +58,9 @@ export async function GET(request: NextRequest) {
         headers: {
           "Content-Type": "application/json",
           "Cache-Control": "no-store",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, OPTIONS",
+          "Access-Control-Allow-Headers": "*",
         },
       },
     )

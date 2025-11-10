@@ -1447,12 +1447,33 @@ export const prozProfilesApi = {
       
       const queryString = searchParams.toString()
       const isBrowser = typeof window !== "undefined"
-      const baseUrl = isBrowser ? "/api/proz/public/profiles" : `${API_BASE_URL}/api/v1/proz/public/profiles`
-      const targetUrl = `${baseUrl}${queryString ? `?${queryString}` : ""}`
+      let response: Response | null = null
 
-      const response = await fetch(isBrowser ? targetUrl : withNgrokBypass(targetUrl), {
-        cache: "no-store",
-      })
+      const directUrl = withNgrokBypass(
+        `${API_BASE_URL}/api/v1/proz/public/profiles${queryString ? `?${queryString}` : ""}`,
+      )
+
+      if (isBrowser) {
+        const proxyUrl = `/api/proz/public/profiles${queryString ? `?${queryString}` : ""}`
+
+        try {
+          response = await fetch(proxyUrl, { cache: "no-store" })
+
+          if (!response.ok) {
+            console.warn("Proxy fetch failed, falling back to direct API:", response.status)
+            response = null
+          }
+        } catch (proxyError) {
+          console.warn("Proxy fetch error, falling back to direct API:", proxyError)
+          response = null
+        }
+      }
+
+      if (!response) {
+        response = await fetch(directUrl, {
+          cache: "no-store",
+        })
+      }
       return handleResponse<any>(response)
     } catch (error) {
       console.error("Network error while searching public profiles:", error)
