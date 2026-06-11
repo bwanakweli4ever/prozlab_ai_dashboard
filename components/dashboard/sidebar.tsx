@@ -9,19 +9,19 @@ import {
   ClipboardList,
   Settings,
   LogOut,
-  Menu,
   UserCircle,
   Edit,
-  ChevronLeft,
-  ChevronRight,
   Bell,
   CheckSquare,
   Briefcase,
+  MessageSquare,
+  FileText,
+  Sparkles,
+  Wand2,
+  ShieldCheck,
 } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Separator } from "@/components/ui/separator"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { ProzLabLogo } from "@/components/prozlab-logo"
 import { useAuth } from "@/contexts/auth-context"
 import { cn } from "@/lib/utils"
@@ -31,192 +31,162 @@ interface SidebarProps {
   onMobileMenuToggle?: (isOpen: boolean) => void
 }
 
+function NavLink({
+  href,
+  icon: Icon,
+  title,
+  active,
+  badge,
+  onClick,
+}: {
+  href: string
+  icon: React.ElementType
+  title: string
+  active: boolean
+  badge?: string
+  onClick?: () => void
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={cn(
+        "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors",
+        active
+          ? "bg-brand/10 text-brand"
+          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+      )}
+    >
+      <Icon className="h-[18px] w-[18px] shrink-0 stroke-[1.75]" />
+      <span className="flex-1">{title}</span>
+      {badge && (
+        <span className="rounded-md bg-brand px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white">
+          {badge}
+        </span>
+      )}
+    </Link>
+  )
+}
+
 export const DashboardSidebar = React.forwardRef<
   { openMobileMenu: () => void },
   SidebarProps
 >(({ isAdmin = false, onMobileMenuToggle }, ref) => {
-  const { user, logout } = useAuth()
+  const { logout } = useAuth()
   const pathname = usePathname()
-  const [isOpen, setIsOpen] = useState(true)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
 
-  // Function to open mobile menu from external trigger
   const openMobileMenu = React.useCallback(() => {
     setIsMobileOpen(true)
     onMobileMenuToggle?.(true)
   }, [onMobileMenuToggle])
 
-  // Expose the open function to parent components
-  React.useImperativeHandle(ref, () => ({
-    openMobileMenu
-  }), [openMobileMenu])
+  React.useImperativeHandle(ref, () => ({ openMobileMenu }), [openMobileMenu])
 
   const navItems = isAdmin
     ? [
-        {
-          title: "Dashboard",
-          href: "/admin",
-          icon: Home,
-        },
-        {
-          title: "Verifications",
-          href: "/admin/verifications",
-          icon: ClipboardList,
-        },
-        {
-          title: "Task Management",
-          href: "/admin/tasks",
-          icon: Briefcase,
-        },
-        {
-          title: "Users",
-          href: "/admin/users",
-          icon: Users,
-        },
-        {
-          title: "Settings",
-          href: "/admin/settings",
-          icon: Settings,
-        },
+        { title: "Dashboard", href: "/admin", icon: Home },
+        { title: "Talent Verification", href: "/admin/verifications", icon: FileText },
+        { title: "Assessments", href: "/admin/assessments", icon: ClipboardList, badge: "New" },
+        { title: "Fraud Detection", href: "/admin/fraud", icon: ShieldCheck },
+        { title: "Task Management", href: "/admin/tasks", icon: Briefcase },
+        { title: "Users", href: "/admin/users", icon: Users },
+        { title: "Settings", href: "/admin/settings", icon: Settings },
       ]
     : [
-        {
-          title: "Dashboard",
-          href: "/dashboard",
-          icon: Home,
-        },
-        {
-          title: "Profile",
-          href: "/dashboard/profile/view",
-          icon: UserCircle,
-        },
-        {
-          title: "Edit Profile",
-          href: "/dashboard/profile",
-          icon: Edit,
-        },
-        {
-          title: "Tasks",
-          href: "/dashboard/tasks",
-          icon: CheckSquare,
-        },
-        {
-          title: "Notifications",
-          href: "/dashboard/notifications",
-          icon: Bell,
-        },
-        {
-          title: "Settings",
-          href: "/dashboard/settings",
-          icon: Settings,
-        },
+        { title: "Dashboard", href: "/dashboard", icon: Home },
+        { title: "Profile", href: "/dashboard/profile/view", icon: UserCircle },
+        { title: "Edit Profile", href: "/dashboard/profile", icon: Edit },
+        { title: "AI Assist", href: "/dashboard/profile/ai-assist", icon: Wand2, badge: "New" },
+        { title: "Verification", href: "/dashboard/verification", icon: ShieldCheck },
+        { title: "Tasks", href: "/dashboard/tasks", icon: CheckSquare },
+        { title: "Applications", href: "/dashboard/tasks", icon: FileText },
+        { title: "Messages", href: "/dashboard/notifications", icon: MessageSquare },
+        { title: "Notifications", href: "/dashboard/notifications", icon: Bell },
+        { title: "Settings", href: "/dashboard/settings", icon: Settings },
       ]
 
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen)
+  const isActive = (href: string) => {
+    if (href === "/dashboard") return pathname === "/dashboard"
+    return pathname === href || pathname.startsWith(`${href}/`)
   }
 
-  // Close mobile menu when pathname changes
   useEffect(() => {
     setIsMobileOpen(false)
     onMobileMenuToggle?.(false)
   }, [pathname, onMobileMenuToggle])
 
-  return (
-    <>
-      {/* Mobile Sidebar */}
-      <Sheet open={isMobileOpen} onOpenChange={(open) => {
-        setIsMobileOpen(open)
-        onMobileMenuToggle?.(open)
-      }}>
-        <SheetContent side="left" className="w-64 p-0 bg-background">
-          <SheetHeader className="p-4 border-b bg-prozlab-red-10">
-            <SheetTitle className="flex items-center">
-              <ProzLabLogo size="sm" />
-            </SheetTitle>
-          </SheetHeader>
-          <div className="flex flex-col h-full py-4">
-            <div className="px-4 space-y-1">
-              {navItems.map((item) => (
-                <Button
-                  key={item.href}
-                  variant={pathname === item.href ? "secondary" : "ghost"}
-                  className="w-full justify-start"
-                  asChild
-                  onClick={() => setIsMobileOpen(false)}
-                >
-                  <Link href={item.href}>
-                    <item.icon className="mr-2 h-4 w-4" />
-                    {item.title}
-                  </Link>
-                </Button>
-              ))}
-            </div>
-            <Separator className="my-4" />
-            <div className="px-4 mt-auto">
-              <Button variant="ghost" className="w-full justify-start" onClick={logout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Logout
-              </Button>
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
+  const sidebarBody = (onNavClick?: () => void) => (
+    <div className="flex h-full flex-col">
+      <nav className="flex-1 space-y-0.5 px-3 py-2">
+        {navItems.map((item) => (
+          <NavLink
+            key={`${item.href}-${item.title}`}
+            href={item.href}
+            icon={item.icon}
+            title={item.title}
+            badge={"badge" in item ? (item as { badge?: string }).badge : undefined}
+            active={isActive(item.href)}
+            onClick={onNavClick}
+          />
+        ))}
+      </nav>
 
-      {/* Desktop Sidebar */}
-      <div
-        className={cn(
-          "hidden md:flex md:flex-col md:fixed md:inset-y-0 transition-all duration-300 ease-in-out",
-          isOpen ? "md:w-64" : "md:w-20",
-        )}
-      >
-        <div className="flex flex-col flex-grow border-r bg-background">
-          <div className="flex items-center h-16 px-4 border-b justify-between bg-prozlab-red-10">
-            {isOpen ? (
-              <>
-                <div className="flex items-center">
-                  <ProzLabLogo size="sm" />
-                </div>
-                <Button variant="ghost" size="icon" onClick={toggleSidebar} className="ml-auto">
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-              </>
-            ) : (
-              <Button variant="ghost" size="icon" onClick={toggleSidebar} className="mx-auto">
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-          <div className="flex flex-col flex-1 py-4">
-            <div className="px-4 space-y-1">
-              {navItems.map((item) => (
-                <Button
-                  key={item.href}
-                  variant={pathname === item.href ? "secondary" : "ghost"}
-                  className={cn("w-full", isOpen ? "justify-start" : "justify-center px-0")}
-                  asChild
-                >
-                  <Link href={item.href}>
-                    <item.icon className={cn("h-4 w-4", isOpen && "mr-2")} />
-                    {isOpen && <span>{item.title}</span>}
-                  </Link>
-                </Button>
-              ))}
-            </div>
-            <Separator className="my-4" />
-            <div className="px-4 mt-auto">
-              <Button
-                variant="ghost"
-                className={cn("w-full", isOpen ? "justify-start" : "justify-center px-0")}
-                onClick={logout}
-              >
-                <LogOut className={cn("h-4 w-4", isOpen && "mr-2")} />
-                {isOpen && "Logout"}
-              </Button>
+      {!isAdmin && (
+        <div className="mx-3 mb-3 rounded-xl border border-brand/15 bg-gradient-to-br from-brand/5 to-indigo-50 p-3">
+          <div className="flex items-start gap-2">
+            <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+            <div>
+              <p className="text-[12px] font-semibold text-slate-900">Boost your visibility</p>
+              <p className="mt-0.5 text-[11px] leading-snug text-slate-500">
+                Stand out to top employers with a boosted profile.
+              </p>
+              <button type="button" className="mt-2 text-[11px] font-semibold text-brand hover:text-brand-dark">
+                Upgrade Now
+              </button>
             </div>
           </div>
         </div>
+      )}
+
+      <div className="border-t border-slate-100 px-3 py-3">
+        <button
+          type="button"
+          onClick={logout}
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+        >
+          <LogOut className="h-[18px] w-[18px] shrink-0" />
+          <span>Logout</span>
+        </button>
       </div>
+    </div>
+  )
+
+  return (
+    <>
+      <Sheet
+        open={isMobileOpen}
+        onOpenChange={(open) => {
+          setIsMobileOpen(open)
+          onMobileMenuToggle?.(open)
+        }}
+      >
+        <SheetContent side="left" className="w-[260px] border-slate-200 bg-white p-0">
+          <SheetHeader className="border-b border-slate-100 px-5 py-4">
+            <SheetTitle>
+              <ProzLabLogo size="sm" />
+            </SheetTitle>
+          </SheetHeader>
+          {sidebarBody(() => setIsMobileOpen(false))}
+        </SheetContent>
+      </Sheet>
+
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[240px] flex-col border-r border-slate-200 bg-white md:flex">
+        <div className="flex h-16 items-center border-b border-slate-100 px-5">
+          <ProzLabLogo size="md" />
+        </div>
+        {sidebarBody()}
+      </aside>
     </>
   )
 })

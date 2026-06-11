@@ -1,3 +1,4 @@
+import { assertAuthResponse, normalizeError } from "@/lib/api-errors"
 import type {
   ProzProfileResponse,
   ProzProfileUpdate,
@@ -28,11 +29,12 @@ import type {
 // Force localhost in development if explicitly requested via DEV_FORCE_LOCALHOST
 const DEV_FORCE_LOCALHOST = process.env.NEXT_PUBLIC_DEV_FORCE_LOCALHOST === 'true'
 export const API_BASE_URL = (
-  DEV_FORCE_LOCALHOST ? 'https://app.prozlab.com' : (process.env.NEXT_PUBLIC_API_URL || 'https://app.prozlab.com/')
+  DEV_FORCE_LOCALHOST ? 'http://localhost:8000' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000')
 ).replace(/\/+$/, "")
 
 const FRONTEND_HOSTNAMES = new Set(["prozlab.com", "www.prozlab.com"])
-const DEFAULT_BACKEND_API_BASE = "https://app.prozlab.com"
+const DEFAULT_BACKEND_API_BASE =
+  process.env.NODE_ENV === "development" ? "http://localhost:8000" : "https://app.prozlab.com"
 
 const getServerBackendBaseUrl = () => {
   if (typeof window !== "undefined") return API_BASE_URL
@@ -86,7 +88,10 @@ async function handleResponse<T>(response: Response): Promise<T> {
     // Only log detailed error info for non-authentication, non-404, and non-business-logic errors
     if (response.status !== 401 && response.status !== 403 && response.status !== 404) {
       // Check if it's a business logic response (like duplicate assignment)
-      const isBusinessLogicError = responseText && responseText.includes("Task already assigned to this professional")
+      const isBusinessLogicError =
+        responseText &&
+        (responseText.includes("Task already assigned to this professional") ||
+          responseText.includes("already exists"))
       
       if (!isBusinessLogicError) {
         console.error("API Error Response Text:", responseText)
@@ -104,7 +109,10 @@ async function handleResponse<T>(response: Response): Promise<T> {
         // Only log detailed error data for non-authentication, non-404, and non-business-logic errors
         if (response.status !== 401 && response.status !== 403 && response.status !== 404) {
           // Check if it's a business logic response (like duplicate assignment)
-          const isBusinessLogicError = errorData.detail && errorData.detail.includes("Task already assigned to this professional")
+          const isBusinessLogicError =
+            errorData.detail &&
+            (errorData.detail.includes("Task already assigned to this professional") ||
+              errorData.detail.includes("already exists"))
           
           if (!isBusinessLogicError) {
             console.error("API Error Data:", errorData)
@@ -250,8 +258,29 @@ export const authApi = {
       }
 
       console.log("Login response status:", response.status)
-      return handleResponse<{ access_token: string; token_type: string }>(response)
+      const data = await handleResponse<{
+        access_token?: string
+        token_type?: string
+        message?: string
+        isAuthError?: boolean
+        success?: boolean
+      }>(response)
+
+      if (data?.isAuthError) {
+        throw new Error(data.message || "Incorrect email or password")
+      }
+
+      if (!data?.access_token) {
+        throw new Error(
+          data?.message ||
+            "Login failed — server did not return an access token. Check that the backend is running at " +
+              API_BASE_URL
+        )
+      }
+
+      return { access_token: data.access_token, token_type: data.token_type || "bearer" }
     } catch (networkError) {
+      if (networkError instanceof Error) throw networkError
       console.error("Network error during login:", networkError)
       throw new Error("Network error: Could not connect to the API.")
     }
@@ -268,10 +297,11 @@ export const authApi = {
       })
 
       console.log("Get current user response status:", response.status)
-      return handleResponse<User>(response)
+      const data = await handleResponse<User>(response)
+      return assertAuthResponse(data)
     } catch (networkError) {
       console.error("Network error while fetching user:", networkError)
-      throw new Error("Network error: Could not connect to the API.")
+      throw normalizeError(networkError)
     }
   },
 
@@ -827,6 +857,124 @@ export const prozApi = {
       throw new Error("Network error: Could not connect to the API.")
     }
   },
+
+  reviewDraft: async (
+    token: string,
+    draft: Record<string, unknown>
+  ): Promise<{
+    success?: boolean
+    suggestions?: string[]
+    suggested_updates?: Record<string, unknown>
+    rephrased_bio?: string[]
+  }> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/proz/ai/review-draft`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(draft),
+    })
+    return handleResponse(response)
+  },
+}
+
+export type VerificationEvidenceType =
+  | "github"
+  | "portfolio"
+  | "work_sample"
+  | "recommendation"
+  | "linkedin"
+  | "certification"
+  | "previous_employer"
+  | "identity_document"
+
+export interface VerificationEvidence {
+  id: string
+  type: VerificationEvidenceType
+  title: string
+  url?: string
+  description?: string
+  referrer_name?: string
+  referrer_email?: string
+  referrer_relationship?: string
+  referrer_message?: string
+  status: string
+  admin_notes?: string
+  metadata?: Record<string, unknown>
+  created_at: string
+}
+
+export interface VerificationStatus {
+  skill_verification_status: string
+  verification_score: number
+  evidences: VerificationEvidence[]
+  requirements_met: {
+    identity_link: boolean
+    work_proof: boolean
+    work_experience?: boolean
+    third_party: boolean
+    minimum_items: boolean
+  }
+  can_submit: boolean
+  admin_notes?: string
+  reviewed_at?: string
+}
+
+export const verificationApi = {
+  getStatus: async (token: string): Promise<VerificationStatus> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/proz/verification`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    return handleResponse<VerificationStatus>(response)
+  },
+
+  addEvidence: async (token: string, payload: Record<string, unknown>): Promise<VerificationEvidence> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/proz/verification/evidence`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    })
+    return handleResponse<VerificationEvidence>(response)
+  },
+
+  deleteEvidence: async (token: string, evidenceId: string): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/proz/verification/evidence/${evidenceId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    await handleResponse(response)
+  },
+
+  submit: async (token: string): Promise<VerificationStatus> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/proz/verification/submit`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    return handleResponse<VerificationStatus>(response)
+  },
+
+  validateGitHub: async (token: string, url: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/proz/verification/github/validate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ url }),
+    })
+    return handleResponse<{
+      valid: boolean
+      username?: string
+      public_repos?: number
+      followers?: number
+      profile_url?: string
+      message?: string
+    }>(response)
+  },
 }
 
 // Admin API
@@ -838,10 +986,11 @@ export const adminApi = {
           Authorization: `Bearer ${token}`,
         },
       })
-      return handleResponse<AdminDashboardResponse>(response)
+      const data = await handleResponse<AdminDashboardResponse>(response)
+      return assertAuthResponse(data)
     } catch (networkError) {
       console.error("Network error while fetching admin dashboard:", networkError)
-      throw new Error("Network error: Could not connect to the API.")
+      throw normalizeError(networkError)
     }
   },
 
@@ -869,9 +1018,10 @@ export const adminApi = {
     sortOrder = "desc",
   ): Promise<any> => {
     try {
+      const safePageSize = Math.min(Math.max(pageSize, 1), 100)
       const params = new URLSearchParams({
         page: page.toString(),
-        page_size: pageSize.toString(),
+        page_size: safePageSize.toString(),
         sort_by: sortBy,
         sort_order: sortOrder,
         self: "true",
@@ -885,18 +1035,40 @@ export const adminApi = {
           Authorization: `Bearer ${token}`,
         },
       })
-      return handleResponse<any>(response)
-    } catch (networkError) {
-      console.warn("Network error while fetching profiles for verification:", networkError)
-      // Return empty data structure as fallback for network errors
-      return {
-        profiles: [],
-        total: 0,
-        page: 1,
-        page_size: pageSize,
-        total_pages: 0
+      const data = await handleResponse<any>(response)
+      if (data && typeof data === "object" && "isAuthError" in data && data.isAuthError) {
+        throw new Error(data.message || "Session expired — please sign in again")
       }
+      return data
+    } catch (networkError) {
+      if (networkError instanceof Error) throw networkError
+      console.warn("Network error while fetching profiles for verification:", networkError)
+      throw new Error("Network error: Could not connect to the API.")
     }
+  },
+
+  getAllProfilesForVerification: async (
+    token: string,
+    verificationStatus?: string,
+    search?: string,
+  ): Promise<any[]> => {
+    const all: any[] = []
+    let page = 1
+    let totalPages = 1
+    while (page <= totalPages) {
+      const data = await adminApi.getProfilesForVerification(
+        token,
+        page,
+        100,
+        verificationStatus,
+        search,
+      )
+      const batch = data?.profiles ?? []
+      all.push(...batch)
+      totalPages = data?.total_pages ?? 1
+      page += 1
+    }
+    return all
   },
 
   getProfileForVerification: async (profileId: string, token: string): Promise<any> => {
@@ -1009,6 +1181,159 @@ export const adminApi = {
       console.error("Network error while deleting profile:", networkError)
       throw new Error("Network error: Could not connect to the API.")
     }
+  },
+
+  getSkillVerifications: async (
+    token: string,
+    opts?: {
+      page?: number
+      pageSize?: number
+      skillStatus?: string
+      search?: string
+      category?: "identity" | "work_experience" | "assessment"
+    },
+  ) => {
+    const params = new URLSearchParams({
+      page: String(opts?.page ?? 1),
+      page_size: String(opts?.pageSize ?? 20),
+    })
+    if (opts?.skillStatus) params.append("skill_status", opts.skillStatus)
+    if (opts?.search) params.append("search", opts.search)
+    if (opts?.category) params.append("category", opts.category)
+
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/admin/proz/skill-verifications?${params}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    )
+    return handleResponse<{
+      profiles: import("@/types/api").SkillVerificationListItem[]
+      total: number
+      page: number
+      page_size: number
+      total_pages: number
+    }>(response)
+  },
+
+  getSkillVerificationDetail: async (profileId: string, token: string) => {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/admin/proz/skill-verifications/${profileId}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    )
+    return handleResponse<import("@/types/api").SkillVerificationDetail>(response)
+  },
+
+  reviewSkillVerification: async (
+    profileId: string,
+    token: string,
+    payload: {
+      decision: "verified" | "rejected" | "needs_revision"
+      admin_notes?: string
+      evidence_reviews?: Array<{
+        evidence_id: string
+        status: "approved" | "rejected" | "pending"
+        admin_notes?: string
+      }>
+    },
+  ) => {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/admin/proz/skill-verifications/${profileId}/review`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      },
+    )
+    return handleResponse<import("@/types/api").SkillVerificationDetail>(response)
+  },
+}
+
+export const fraudApi = {
+  getCandidates: async (
+    token: string,
+    opts?: { filter?: "flagged" | "banned" | "high_risk" | "all"; search?: string },
+  ) => {
+    const params = new URLSearchParams()
+    if (opts?.filter) params.append("filter", opts.filter)
+    if (opts?.search) params.append("search", opts.search)
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/fraud/candidates?${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    return handleResponse<{
+      candidates: import("@/types/api").FraudCandidate[]
+      total: number
+      flagged_count: number
+      banned_count: number
+      high_risk_count: number
+    }>(response)
+  },
+
+  scanAll: async (token: string, autoFlag = true) => {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/admin/fraud/scan?auto_flag=${autoFlag}`,
+      { method: "POST", headers: { Authorization: `Bearer ${token}` } },
+    )
+    return handleResponse<
+      Array<{
+        user_id: string
+        fraud_score: number
+        risk_level: string
+        signals: import("@/types/api").FraudSignal[]
+        auto_flagged: boolean
+      }>
+    >(response)
+  },
+
+  scanUser: async (userId: string, token: string, autoFlag = true) => {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/admin/fraud/users/${userId}/scan?auto_flag=${autoFlag}`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    )
+    return handleResponse<{
+      user_id: string
+      fraud_score: number
+      risk_level: string
+      signals: import("@/types/api").FraudSignal[]
+      auto_flagged: boolean
+    }>(response)
+  },
+
+  flagUser: async (userId: string, token: string, reason: string, notes?: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/fraud/users/${userId}/flag`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ reason, notes }),
+    })
+    return handleResponse(response)
+  },
+
+  unflagUser: async (userId: string, token: string, reason: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/fraud/users/${userId}/unflag`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ reason }),
+    })
+    return handleResponse(response)
+  },
+
+  banUser: async (userId: string, token: string, reason: string, notes?: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/fraud/users/${userId}/ban`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ reason, notes }),
+    })
+    return handleResponse(response)
+  },
+
+  unbanUser: async (userId: string, token: string, reason: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/fraud/users/${userId}/unban`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ reason }),
+    })
+    return handleResponse(response)
   },
 }
 

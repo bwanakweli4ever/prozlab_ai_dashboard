@@ -1,16 +1,22 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Raleway } from "next/font/google"
+import { Inter, Raleway } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/contexts/auth-context"
 import { ProfileProvider } from "@/contexts/profile-context"
+import { AppRecovery } from "@/components/app-recovery"
 import { Toaster } from "@/components/ui/toaster"
 import { Toaster as HotToaster } from "react-hot-toast"
 import { ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 
-const raleway = Raleway({ 
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+})
+
+const raleway = Raleway({
   subsets: ["latin"],
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
   variable: "--font-raleway"
@@ -37,8 +43,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={raleway.className} suppressHydrationWarning>
+      <body className={`${raleway.className} ${inter.variable}`} suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <AppRecovery />
           <AuthProvider>
             <ProfileProvider>
               {children}

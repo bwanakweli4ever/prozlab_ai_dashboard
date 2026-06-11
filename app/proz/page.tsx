@@ -48,10 +48,7 @@ export default function BrowseProz() {
 
       const matches = (candidate: string) => {
         const c = normalize(candidate)
-        for (const sel of expanded) {
-          if (c === sel || c.includes(sel) || sel.includes(c)) return true
-        }
-        return false
+        return Array.from(expanded).some((sel) => c === sel || c.includes(sel) || sel.includes(c))
       }
 
       filtered = filtered.filter((p) => Array.isArray(p.specialties) && p.specialties.some((s: string) => matches(s)))

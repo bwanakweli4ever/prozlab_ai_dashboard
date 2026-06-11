@@ -8,20 +8,18 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { motion } from "framer-motion"
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ProzLabLogo } from "@/components/prozlab-logo"
+import { OnboardingCard } from "@/components/onboarding/onboarding-shell"
 import { toast } from "@/components/ui/use-toast"
 import { useAuth } from "@/contexts/auth-context"
-import { Eye, EyeOff } from "lucide-react"
+import { AlertCircle, ArrowLeft, Eye, EyeOff, Lock, Shield } from "lucide-react"
 import { authApi } from "@/lib/api"
 import toastHot from "react-hot-toast"
 import { toast as toastNotify } from "react-toastify"
 
-// Define the form schema with explicit types
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string().min(8, {
@@ -30,12 +28,14 @@ const formSchema = z.object({
   rememberMe: z.boolean().default(false),
 })
 
-// Define our form values type explicitly
 type FormValues = {
   email: string
   password: string
   rememberMe: boolean
 }
+
+const inputClass =
+  "h-11 rounded-xl border-slate-200 bg-white text-[14px] placeholder:text-slate-400 focus-visible:ring-brand"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -48,6 +48,7 @@ export default function LoginPage() {
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [isResettingWithOtp, setIsResettingWithOtp] = useState(false)
+  const [loginError, setLoginError] = useState<string | null>(null)
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema) as any,
@@ -57,8 +58,7 @@ export default function LoginPage() {
       rememberMe: false,
     },
   })
-  
-  // If already authenticated, redirect away from login
+
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
       if (user?.is_superuser) {
@@ -69,37 +69,52 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, isLoading, router, user])
 
-  // Show loading while checking authentication
   if (isLoading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center p-4 md:p-8 bg-gradient-to-b from-prozlab-red-10 to-white dark:from-gray-900 dark:to-gray-800 landing-override">
-        <div className="w-full max-w-md">
-          <Card className="border-prozlab-200 dark:border-gray-700 shadow-lg bg-white dark:bg-gray-800">
-            <CardContent className="flex justify-center items-center py-8">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-prozlab-blue mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Checking authentication...</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="landing-page flex min-h-screen flex-col bg-gradient-to-br from-[#EEF2FF] via-[#F5F3FF] to-white">
+        <AuthHeader />
+        <main className="flex flex-1 items-center justify-center px-4 py-10">
+          <OnboardingCard className="max-w-md">
+            <div className="flex flex-col items-center py-10">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+              <p className="mt-4 text-[14px] text-slate-500">Checking authentication…</p>
+            </div>
+          </OnboardingCard>
+        </main>
       </div>
     )
   }
 
-  // If already authenticated, don't render the login form
   if (isAuthenticated) {
-    return null // Will redirect in useEffect
+    return null
+  }
+
+  function formatLoginError(message: string): string {
+    if (/incorrect email|invalid credentials|could not validate/i.test(message)) {
+      return "Incorrect email or password. Please try again."
+    }
+    if (/no access token|did not return an access token/i.test(message)) {
+      return "Could not sign in — backend may be offline or misconfigured. Ensure the API is running on port 8000."
+    }
+    if (/network error|failed to fetch|could not connect/i.test(message)) {
+      return "Cannot reach the server. Check your connection and that the backend is running."
+    }
+    if (/suspended|policy violation|banned/i.test(message)) {
+      return "Your account has been suspended. Contact support@prozlab.com if you believe this is an error."
+    }
+    return message
   }
 
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true)
+    setLoginError(null)
+    form.clearErrors()
 
     try {
       await login({
         email: values.email,
         password: values.password,
-        remember_me: values.rememberMe, // Pass the remember_me flag to the login function
+        remember_me: values.rememberMe,
       })
 
       toast({
@@ -107,19 +122,27 @@ export default function LoginPage() {
         description: "Redirecting to dashboard...",
       })
     } catch (error) {
+      const raw = error instanceof Error ? error.message : "Please check your credentials and try again"
+      const message = formatLoginError(raw)
+      setLoginError(message)
+
+      if (/incorrect email|invalid credentials|password/i.test(message)) {
+        form.setError("password", { type: "manual", message: "Invalid credentials" })
+      }
+
       toast({
         title: "Login failed",
-        description: error instanceof Error ? error.message : "Please check your credentials and try again",
+        description: message,
         variant: "destructive",
       })
+      toastHot.error(message)
+      toastNotify.error(message)
     } finally {
       setIsSubmitting(false)
     }
   }
 
   async function handleForgotPassword() {
-    const email = form.getValues("email")
-    // Validate email field first
     const valid = await form.trigger("email")
     if (!valid) {
       toast({
@@ -129,6 +152,8 @@ export default function LoginPage() {
       })
       return
     }
+
+    const email = form.getValues("email")
 
     try {
       setIsSendingReset(true)
@@ -149,7 +174,6 @@ export default function LoginPage() {
 
   async function handleResetWithOtp() {
     const email = form.getValues("email")
-    // Quick client validation
     const emailValid = await form.trigger("email")
     if (!emailValid) return
     if (!otpCode || otpCode.trim().length < 4) {
@@ -171,7 +195,6 @@ export default function LoginPage() {
       toast({ title: "Password reset", description: "You can now log in with your new password." })
       toastHot.success("Password reset successful")
       toastNotify.success("Password reset successful")
-      // Prefill password and collapse the OTP form
       form.setValue("password", newPassword)
       setShowOtpReset(false)
       setOtpCode("")
@@ -188,85 +211,125 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-4 md:p-8 bg-gradient-to-b from-prozlab-red-10 to-white dark:from-gray-900 dark:to-gray-800 landing-override">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
-      >
-        <Card className="border-prozlab-200 dark:border-gray-700 shadow-lg bg-white dark:bg-gray-800">
-          <CardHeader className="space-y-1">
-            <div className="flex justify-center mb-6">
-              <ProzLabLogo size="md" />
+    <div className="landing-page flex min-h-screen flex-col bg-gradient-to-br from-[#EEF2FF] via-[#F5F3FF] to-white">
+      <AuthHeader />
+
+      <main className="mx-auto flex w-full max-w-[480px] flex-1 flex-col items-center justify-center px-4 py-10">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="w-full"
+        >
+          <OnboardingCard>
+            <div className="pt-2 text-center">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand/10">
+                <Lock className="h-7 w-7 text-brand" />
+              </div>
+              <h1 className="text-[22px] font-bold tracking-tight text-slate-900">
+                {showOtpReset ? "Reset your password" : "Welcome back"}
+              </h1>
+              <p className="mt-1.5 text-[14px] text-slate-500">
+                {showOtpReset
+                  ? "Enter the code from your email and choose a new password"
+                  : "Sign in to continue to your ProzLab account"}
+              </p>
             </div>
-            <CardTitle className="text-2xl font-bold text-center">{showOtpReset ? "Reset Password" : "Login to your account"}</CardTitle>
-            <CardDescription className="text-center">{showOtpReset ? "Enter your email, OTP code, and a new password" : "Enter your email and password to login"}</CardDescription>
-          </CardHeader>
-          <CardContent>
+
             {showOtpReset ? (
-              <div className="space-y-4">
-                <div className="grid gap-3">
+              <div className="mt-6 space-y-4">
+                <div className="space-y-3">
                   <div>
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Email</label>
+                    <label className="text-[13px] font-medium text-slate-700">Email</label>
                     <Input
                       type="email"
                       value={form.watch("email")}
                       onChange={(e) => form.setValue("email", e.target.value)}
                       placeholder="email@example.com"
-                      className="mt-1"
+                      className={`mt-1.5 ${inputClass}`}
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">OTP Code</label>
+                    <label className="text-[13px] font-medium text-slate-700">OTP Code</label>
                     <Input
                       value={otpCode}
                       onChange={(e) => setOtpCode(e.target.value)}
                       placeholder="Enter the code sent to your email"
-                      className="mt-1"
+                      className={`mt-1.5 ${inputClass}`}
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">New Password</label>
+                    <label className="text-[13px] font-medium text-slate-700">New Password</label>
                     <Input
                       type="password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="mt-1"
+                      className={`mt-1.5 ${inputClass}`}
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Confirm Password</label>
+                    <label className="text-[13px] font-medium text-slate-700">Confirm Password</label>
                     <Input
                       type="password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="mt-1"
+                      className={`mt-1.5 ${inputClass}`}
                     />
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Button type="button" onClick={handleResetWithOtp} disabled={isResettingWithOtp}>
-                    {isResettingWithOtp ? "Resetting..." : "Reset Password"}
-                  </Button>
-                  <Button type="button" variant="ghost" onClick={() => setShowOtpReset(false)}>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowOtpReset(false)}
+                    className="flex flex-1 items-center justify-center rounded-xl border border-slate-200 py-3 text-[14px] font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                  >
                     Cancel
-                  </Button>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResetWithOtp}
+                    disabled={isResettingWithOtp}
+                    className="flex-[2] rounded-xl bg-brand py-3 text-[14px] font-semibold text-white shadow-md shadow-indigo-200 transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isResettingWithOtp ? "Resetting…" : "Reset Password"}
+                  </button>
                 </div>
               </div>
             ) : (
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="mt-6 space-y-4">
+                  {loginError && (
+                    <div
+                      role="alert"
+                      className="flex gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-left"
+                    >
+                      <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
+                      <div>
+                        <p className="text-[13px] font-semibold text-red-800">Sign in failed</p>
+                        <p className="mt-0.5 text-[13px] text-red-700">{loginError}</p>
+                      </div>
+                    </div>
+                  )}
+
                   <FormField
                     control={form.control}
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel className="text-[13px] font-medium text-slate-700">Email</FormLabel>
                         <FormControl>
-                          <Input placeholder="email@example.com" type="email" {...field} />
+                          <Input
+                            placeholder="email@example.com"
+                            type="email"
+                            className={inputClass}
+                            {...field}
+                            onChange={(e) => {
+                              field.onChange(e)
+                              if (loginError) setLoginError(null)
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -277,85 +340,109 @@ export default function LoginPage() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Password</FormLabel>
+                        <FormLabel className="text-[13px] font-medium text-slate-700">Password</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Input 
-                              placeholder="••••••••" 
-                              type={showPassword ? "text" : "password"} 
-                              {...field} 
+                            <Input
+                              placeholder="••••••••"
+                              type={showPassword ? "text" : "password"}
+                              className={`pr-11 ${inputClass}`}
+                              {...field}
+                              onChange={(e) => {
+                                field.onChange(e)
+                                if (loginError) setLoginError(null)
+                              }}
                             />
-                            <Button
+                            <button
                               type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                              className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center text-slate-400 transition-colors hover:text-slate-600"
                               onClick={() => setShowPassword(!showPassword)}
+                              aria-label={showPassword ? "Hide password" : "Show password"}
                             >
-                              {showPassword ? (
-                                <EyeOff className="h-4 w-4 text-gray-400" />
-                              ) : (
-                                <Eye className="h-4 w-4 text-gray-400" />
-                              )}
-                            </Button>
+                              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            </button>
                           </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  <div className="flex items-center justify-between">
+
+                  <div className="flex items-center justify-between pt-1">
                     <FormField
                       control={form.control}
                       name="rememberMe"
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md p-1">
+                        <FormItem className="flex flex-row items-center space-x-2 space-y-0">
                           <FormControl>
                             <Checkbox
                               checked={field.value}
-                              onCheckedChange={(checked) => {
-                                field.onChange(checked === true)
-                              }}
+                              onCheckedChange={(checked) => field.onChange(checked === true)}
+                              className="border-slate-300 data-[state=checked]:border-brand data-[state=checked]:bg-brand"
                             />
                           </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>Remember me</FormLabel>
-                          </div>
+                          <FormLabel className="cursor-pointer text-[13px] font-normal text-slate-600">
+                            Remember me
+                          </FormLabel>
                         </FormItem>
                       )}
                     />
-                    <Button
+                    <button
                       type="button"
-                      variant="link"
-                      className="p-0 h-auto text-sm text-prozlab-blue hover:text-prozlab-700 underline-offset-4 hover:underline"
+                      className="text-[13px] font-medium text-brand transition-colors hover:text-brand-dark"
                       onClick={handleForgotPassword}
                       disabled={isSendingReset}
                     >
-                      {isSendingReset ? "Sending..." : "Forgot password?"}
-                    </Button>
+                      {isSendingReset ? "Sending…" : "Forgot password?"}
+                    </button>
                   </div>
-                  <Button type="submit" className="w-full bg-prozlab-blue hover:bg-prozlab-600" disabled={isSubmitting}>
-                    {isSubmitting ? "Logging in..." : "Login"}
-                  </Button>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="mt-2 flex w-full items-center justify-center rounded-xl bg-brand py-3.5 text-[15px] font-semibold text-white shadow-md shadow-indigo-200 transition-colors hover:bg-brand-dark disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isSubmitting ? "Signing in…" : "Sign in"}
+                  </button>
                 </form>
               </Form>
             )}
-          </CardContent>
-          {!showOtpReset && (
-            <CardFooter className="flex flex-col space-y-4">
-              <div className="text-sm text-center text-muted-foreground">
+
+            {!showOtpReset && (
+              <p className="mt-6 text-center text-[14px] text-slate-500">
                 Don&apos;t have an account?{" "}
-                <Link
-                  href="/register"
-                  className="text-prozlab-blue hover:text-prozlab-700 underline-offset-4 hover:underline"
-                >
-                  Register
+                <Link href="/register" className="font-semibold text-brand hover:text-brand-dark">
+                  Get started
                 </Link>
-              </div>
-            </CardFooter>
-          )}
-        </Card>
-      </motion.div>
+              </p>
+            )}
+          </OnboardingCard>
+
+          <div className="mt-6 flex items-center justify-center gap-2 text-[12px] text-slate-400">
+            <Shield className="h-3.5 w-3.5 text-brand" />
+            <span>Secure &amp; encrypted login</span>
+          </div>
+        </motion.div>
+      </main>
     </div>
+  )
+}
+
+function AuthHeader() {
+  return (
+    <header className="border-b border-white/60 bg-white/80 backdrop-blur-md">
+      <div className="mx-auto flex h-[72px] max-w-[1200px] items-center justify-between px-6">
+        <Link href="/">
+          <ProzLabLogo size="md" />
+        </Link>
+        <Link
+          href="/"
+          className="flex items-center gap-1.5 text-[13px] font-medium text-slate-600 transition-colors hover:text-brand"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to home
+        </Link>
+      </div>
+    </header>
   )
 }

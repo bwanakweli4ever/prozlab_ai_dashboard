@@ -1,71 +1,57 @@
 "use client"
 
-import { Bell, Moon, Sun, Menu } from "lucide-react"
-import { useTheme } from "next-themes"
+import { Bell, Menu } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/contexts/auth-context"
+import { useProfile } from "@/contexts/profile-context"
 
 interface DashboardHeaderProps {
   onMobileMenuToggle?: () => void
 }
 
 export function DashboardHeader({ onMobileMenuToggle }: DashboardHeaderProps) {
-  const { setTheme } = useTheme()
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
+  const { profile } = useProfile()
 
   const userInitial = user?.first_name ? user.first_name.charAt(0).toUpperCase() : "U"
   const userName = user ? `${user.first_name || ""} ${user.last_name || ""}`.trim() : "User"
+  const avatarUrl = profile?.profile_image_url || undefined
 
   return (
-    <header className="flex h-14 items-center gap-4 border-b bg-background/95 backdrop-blur-sm px-4 lg:px-6 sticky top-0 z-10 shadow-sm">
-      {/* Mobile menu button */}
+    <header className="sticky top-0 z-20 flex h-16 items-center justify-end gap-4 border-b border-slate-200 bg-white px-4 md:px-8">
       <Button
         variant="ghost"
         size="icon"
-        className="md:hidden hover:bg-muted"
+        className="mr-auto text-slate-600 hover:bg-slate-100 md:hidden"
         onClick={onMobileMenuToggle}
       >
         <Menu className="h-5 w-5" />
         <span className="sr-only">Open Menu</span>
       </Button>
-      
-      <div className="ml-auto flex items-center gap-4">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon" className="rounded-full">
-              <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-              <span className="sr-only">Toggle theme</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setTheme("light")}>Light</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setTheme("dark")}>Dark</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setTheme("system")}>System</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <Button variant="outline" size="icon" className="rounded-full">
-          <Bell className="h-4 w-4" />
-          <span className="sr-only">Notifications</span>
-        </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon" className="rounded-full">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src="/placeholder.svg" alt={userName} />
-                <AvatarFallback>{userInitial}</AvatarFallback>
-              </Avatar>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => (window.location.href = "/dashboard/profile")}>Profile</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => (window.location.href = "/dashboard/settings")}>Settings</DropdownMenuItem>
-            <DropdownMenuItem onClick={logout}>Log out</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+
+      <Button
+        variant="ghost"
+        size="icon"
+        className="relative rounded-full text-slate-600 hover:bg-slate-100"
+        onClick={() => (window.location.href = "/dashboard/notifications")}
+      >
+        <Bell className="h-[18px] w-[18px]" />
+        <span className="sr-only">Notifications</span>
+      </Button>
+
+      <div className="flex items-center gap-3">
+        <Avatar className="h-9 w-9 border-2 border-white shadow-sm ring-1 ring-slate-200">
+          <AvatarImage src={avatarUrl} alt={userName} />
+          <AvatarFallback className="bg-brand/10 text-sm font-semibold text-brand">
+            {userInitial}
+          </AvatarFallback>
+        </Avatar>
+        <div className="hidden text-left sm:block">
+          <p className="text-[13px] font-semibold leading-tight text-slate-900">{userName}</p>
+          <p className="text-[11px] text-slate-500">Candidate</p>
+        </div>
       </div>
     </header>
   )

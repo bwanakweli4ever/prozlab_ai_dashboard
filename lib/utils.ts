@@ -1,9 +1,8 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 const DEFAULT_MEDIA_BASE_URL = (
-  process.env.NEXT_PUBLIC_DEV_FORCE_LOCALHOST === "true"
-    ? "https://app.prozlab.com"
-    : process.env.NEXT_PUBLIC_API_URL || "https://app.prozlab.com/"
+  process.env.NEXT_PUBLIC_API_URL ||
+  (process.env.NODE_ENV === "development" ? "http://localhost:8000" : "https://app.prozlab.com")
 ).replace(/\/+$/, "")
 
 const UNSAFE_MEDIA_HOSTS = new Set(["localhost", "127.0.0.1", "0.0.0.0"])

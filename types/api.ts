@@ -6,6 +6,37 @@ export interface User {
   last_name: string | null
   is_active: boolean | null
   is_superuser: boolean | null
+  is_flagged?: boolean | null
+  is_banned?: boolean | null
+  fraud_score?: number | null
+}
+
+export interface FraudSignal {
+  code: string
+  severity: "low" | "medium" | "high" | "critical"
+  message: string
+  score: number
+}
+
+export interface FraudCandidate {
+  user_id: string
+  email: string
+  first_name?: string | null
+  last_name?: string | null
+  is_active: boolean
+  is_flagged: boolean
+  is_banned: boolean
+  fraud_score: number
+  fraud_signals: FraudSignal[]
+  ban_reason?: string | null
+  fraud_notes?: string | null
+  flagged_at?: string | null
+  banned_at?: string | null
+  fraud_scanned_at?: string | null
+  profile_id?: string | null
+  profile_verification_status?: string | null
+  skill_verification_status?: string | null
+  risk_level: string
 }
 
 export interface UserCreate {
@@ -20,6 +51,7 @@ export interface UserCreate {
 export interface UserLogin {
   email: string
   password: string
+  remember_me?: boolean
 }
 
 // Professional profile types
@@ -47,6 +79,11 @@ export interface ProzProfileResponse {
   review_count: number
   email_verified: boolean
   specialties?: string[]
+  skills?: string[]
+  portfolio_links?: string[]
+  skill_verification_status?: string
+  experience_level?: string
+  predicted_success_score?: number
   created_at: string
   updated_at?: string
   // Analytics fields
@@ -178,6 +215,51 @@ export interface VerificationStatsAdmin {
   verifications_this_week: number
   avg_verification_time_hours: number
   pending_oldest_date?: string
+  pending_skill_reviews?: number
+  verified_skills?: number
+  rejected_skills?: number
+}
+
+export interface SkillVerificationListItem {
+  id: string
+  first_name: string
+  last_name: string
+  email: string
+  profile_image_url?: string
+  location?: string
+  years_experience?: number
+  verification_status: string
+  skill_verification_status: string
+  verification_score: number
+  evidence_count: number
+  identity_items: number
+  work_experience_items: number
+  submitted_at?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface SkillVerificationDetail {
+  profile: SkillVerificationListItem
+  evidences: Array<{
+    id: string
+    type: string
+    title: string
+    url?: string
+    description?: string
+    referrer_name?: string
+    referrer_email?: string
+    referrer_relationship?: string
+    referrer_message?: string
+    status: string
+    admin_notes?: string
+    metadata?: Record<string, unknown>
+    created_at: string
+  }>
+  requirements_met: Record<string, boolean>
+  admin_notes?: string
+  reviewed_at?: string
+  reviewed_by?: string
 }
 
 export interface VerificationHistoryItem {

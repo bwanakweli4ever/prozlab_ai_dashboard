@@ -11,10 +11,19 @@ import { toast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
 import { API_BASE_URL } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
-import { Loader2 } from "lucide-react"
+import { useProfile } from "@/contexts/profile-context"
+import Link from "next/link"
+import { ArrowLeft, Loader2, Sparkles, Upload } from "lucide-react"
+import {
+  dashboardCardClass,
+  dashboardInputClass,
+  dashboardPageSubtitleClass,
+  dashboardPageTitleClass,
+} from "@/lib/dashboard-styles"
 
 export default function AIAssistProfilePage() {
-  const { token, isAuthenticated } = useAuth()
+  const { token, isAuthenticated, user } = useAuth()
+  const { fetchProfile } = useProfile()
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
@@ -89,9 +98,10 @@ export default function AIAssistProfilePage() {
     }
     setLoading(true)
     try {
-      const payload: any = {}
-      if (firstName) payload.first_name = firstName
-      if (lastName) payload.last_name = lastName
+      const payload: any = {
+        first_name: firstName || user?.first_name || "Candidate",
+        last_name: lastName || user?.last_name || "User",
+      }
       if (phoneNumber) payload.phone_number = phoneNumber
       if (bio) payload.bio = bio
       if (location) payload.location = location
@@ -112,9 +122,20 @@ export default function AIAssistProfilePage() {
         router.push("/login")
         return
       }
-      if (!res.ok) throw new Error(await res.text())
-      toast({ title: "Profile updated" })
-      router.push("/dashboard/profile/view")
+      if (!res.ok) {
+        const errText = await res.text()
+        let detail = errText
+        try {
+          const parsed = JSON.parse(errText)
+          detail = parsed.detail || errText
+        } catch {
+          /* use raw text */
+        }
+        throw new Error(typeof detail === "string" ? detail : "Failed to apply profile")
+      }
+      await fetchProfile()
+      toast({ title: "Profile saved", description: "Your profile is ready to edit and verify." })
+      router.push("/dashboard/profile")
     } catch (e: any) {
       toast({ title: "Update failed", description: e?.message || "Try again", variant: "destructive" })
     } finally {
@@ -154,37 +175,82 @@ export default function AIAssistProfilePage() {
   }
 
   return (
-    <div className="relative p-4 md:p-6">
+    <div className="relative mx-auto max-w-5xl space-y-6">
       {loading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-          <div className="flex items-center gap-3 bg-white dark:bg-gray-800 px-4 py-3 rounded-md shadow">
-            <Loader2 className="h-5 w-5 animate-spin" />
-            <span className="text-sm">Processing…</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm">
+          <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-lg">
+            <Loader2 className="h-5 w-5 animate-spin text-brand" />
+            <span className="text-sm font-medium text-slate-700">Processing…</span>
           </div>
         </div>
       )}
-      <Card className="max-w-5xl mx-auto">
-        <CardHeader>
-          <CardTitle>AI Resume Assistant</CardTitle>
+
+      <div>
+        <Link
+          href="/dashboard"
+          className="mb-4 inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-500 transition-colors hover:text-brand"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to dashboard
+        </Link>
+        <div className="flex items-start gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-100">
+            <Sparkles className="h-6 w-6 text-brand" />
+          </div>
+          <div>
+            <h1 className={dashboardPageTitleClass}>AI Profile Assistant</h1>
+            <p className={`mt-1 ${dashboardPageSubtitleClass}`}>
+              Upload your resume or review your current profile — AI will suggest fields to complete.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <Card className={dashboardCardClass}>
+        <CardHeader className="border-b border-slate-100 pb-4">
+          <CardTitle className="text-[16px] font-semibold text-slate-900">Upload & analyze</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label>Upload PDF Resume</Label>
-            <Input disabled={loading} type="file" accept="application/pdf" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-            <Button onClick={handleUpload} disabled={loading || !file} className="mt-2">
-              {loading ? "Analyzing..." : "Analyze Resume"}
-            </Button>
-            <Button onClick={reviewCurrentProfile} disabled={loading} variant="secondary" className="mt-2 ml-2">
-              {loading ? "..." : "Review Current Profile (AI)"}
-            </Button>
+        <CardContent className="space-y-6 pt-6">
+          <div className="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-6">
+            <Label className="text-slate-700">PDF Resume</Label>
+            <Input
+              disabled={loading}
+              type="file"
+              accept="application/pdf"
+              className={`mt-2 ${dashboardInputClass}`}
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+            />
+            {file && (
+              <p className="mt-2 text-[13px] text-slate-500">
+                Selected: <span className="font-medium text-slate-700">{file.name}</span>
+              </p>
+            )}
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button
+                onClick={handleUpload}
+                disabled={loading || !file}
+                className="bg-brand hover:bg-brand-dark"
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                {loading ? "Analyzing..." : "Analyze Resume"}
+              </Button>
+              <Button
+                onClick={reviewCurrentProfile}
+                disabled={loading}
+                variant="outline"
+                className="border-slate-200 text-slate-700 hover:bg-slate-50"
+              >
+                Review Current Profile
+              </Button>
+            </div>
           </div>
 
           {result && (
             <div className="space-y-6">
               {/* Quick merge helpers for arrays */}
               {(experiences.length > 0 || educationItems.length > 0) && (
-                <div className="rounded border p-3">
-                  <div className="text-sm text-muted-foreground mb-2">Detected structured items</div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                  <div className="mb-2 text-sm text-slate-500">Detected structured items</div>
                   {experiences.length > 0 && (
                     <div className="mb-3">
                       <div className="flex items-center justify-between">
@@ -203,7 +269,7 @@ export default function AIAssistProfilePage() {
                       </div>
                       <div className="mt-2 space-y-1 max-h-40 overflow-auto text-sm">
                         {experiences.map((e, i) => (
-                          <div key={i} className="p-2 border rounded">
+                          <div key={i} className="rounded-lg border border-slate-200 bg-white p-2">
                             {(e.role || e.company || e.period) ? (
                               <div className="font-medium">{[e.role, e.company, e.period].filter(Boolean).join(" — ")}</div>
                             ) : null}
@@ -231,7 +297,7 @@ export default function AIAssistProfilePage() {
                       </div>
                       <div className="mt-2 space-y-1 max-h-40 overflow-auto text-sm">
                         {educationItems.map((e, i) => (
-                          <div key={i} className="p-2 border rounded">
+                          <div key={i} className="rounded-lg border border-slate-200 bg-white p-2">
                             <div className="font-medium">{[e.institution, e.degree, e.period].filter(Boolean).join(" — ")}</div>
                             {e.raw && <div className="text-muted-foreground whitespace-pre-wrap">{e.raw}</div>}
                           </div>
@@ -244,47 +310,47 @@ export default function AIAssistProfilePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label>First Name</Label>
-                  <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                  <Input className={dashboardInputClass} value={firstName} onChange={(e) => setFirstName(e.target.value)} />
                 </div>
                 <div>
                   <Label>Last Name</Label>
-                  <Input value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                  <Input className={dashboardInputClass} value={lastName} onChange={(e) => setLastName(e.target.value)} />
                 </div>
                 <div>
                   <Label>Phone Number</Label>
-                  <Input value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
+                  <Input className={dashboardInputClass} value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} />
                 </div>
                 <div>
                   <Label>Location</Label>
-                  <Input value={location} onChange={(e) => setLocation(e.target.value)} />
+                  <Input className={dashboardInputClass} value={location} onChange={(e) => setLocation(e.target.value)} />
                 </div>
                 <div>
                   <Label>Years of Experience</Label>
-                  <Input type="number" value={yearsExperience as any} onChange={(e) => setYearsExperience(e.target.value === "" ? "" : Number(e.target.value))} />
+                  <Input className={dashboardInputClass} type="number" value={yearsExperience as any} onChange={(e) => setYearsExperience(e.target.value === "" ? "" : Number(e.target.value))} />
                 </div>
                 <div>
                   <Label>Website</Label>
-                  <Input value={website} onChange={(e) => setWebsite(e.target.value)} />
+                  <Input className={dashboardInputClass} value={website} onChange={(e) => setWebsite(e.target.value)} />
                 </div>
                 <div>
                   <Label>LinkedIn</Label>
-                  <Input value={linkedin} onChange={(e) => setLinkedin(e.target.value)} />
+                  <Input className={dashboardInputClass} value={linkedin} onChange={(e) => setLinkedin(e.target.value)} />
                 </div>
               </div>
 
               <div>
                 <Label>Suggested Bio / Summary</Label>
-                <Textarea rows={6} value={bio} onChange={(e) => setBio(e.target.value)} />
+                <Textarea className={dashboardInputClass} rows={6} value={bio} onChange={(e) => setBio(e.target.value)} />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label>Education</Label>
-                  <Textarea rows={6} value={education} onChange={(e) => setEducation(e.target.value)} />
+                  <Textarea className={dashboardInputClass} rows={6} value={education} onChange={(e) => setEducation(e.target.value)} />
                 </div>
                 <div>
                   <Label>Certifications</Label>
-                  <Textarea rows={6} value={certifications} onChange={(e) => setCertifications(e.target.value)} />
+                  <Textarea className={dashboardInputClass} rows={6} value={certifications} onChange={(e) => setCertifications(e.target.value)} />
                 </div>
               </div>
 
@@ -308,7 +374,7 @@ export default function AIAssistProfilePage() {
                         type="button"
                         key={i}
                         onClick={() => setBio(s)}
-                        className="w-full text-left p-3 border rounded text-sm hover:bg-muted"
+                        className="w-full rounded-lg border border-slate-200 bg-white p-3 text-left text-sm text-slate-700 transition-colors hover:border-brand/30 hover:bg-violet-50"
                       >
                         {s}
                       </button>
@@ -330,7 +396,7 @@ export default function AIAssistProfilePage() {
                       <Label>Rephrased Bio Options</Label>
                       <div className="space-y-2">
                         {result.review.rephrased_bio.map((s: string, i: number) => (
-                          <button key={i} type="button" onClick={() => setBio(s)} className="w-full text-left p-3 border rounded text-sm hover:bg-muted">
+                          <button key={i} type="button" onClick={() => setBio(s)} className="w-full rounded-lg border border-slate-200 bg-white p-3 text-left text-sm text-slate-700 transition-colors hover:border-brand/30 hover:bg-violet-50">
                             {s}
                           </button>
                         ))}
@@ -369,8 +435,8 @@ export default function AIAssistProfilePage() {
                 </div>
               )}
 
-              <div className="flex justify-end">
-                <Button onClick={applyUpdates} disabled={loading}>
+              <div className="flex justify-end border-t border-slate-100 pt-4">
+                <Button onClick={applyUpdates} disabled={loading} className="bg-brand hover:bg-brand-dark">
                   {loading ? "Applying..." : "Apply to Profile"}
                 </Button>
               </div>

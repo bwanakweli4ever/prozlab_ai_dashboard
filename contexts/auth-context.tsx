@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { authApi } from "@/lib/api"
+import { isAuthErrorPayload } from "@/lib/api-errors"
 import type { User, UserLogin, UserCreate } from "@/types/api"
 
 interface AuthContextType {
@@ -52,10 +53,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!isLoading && user && token) {
       // Check if we're currently on an auth page (login, register, forgot-password, reset-password)
       const currentPath = window.location.pathname
-      const isOnAuthPage = ['/login', '/register', '/forgot-password', '/reset-password'].includes(currentPath)
-      
-      // Always redirect after successful authentication, even from auth pages
-      // This ensures users go to dashboard after registration/login
+      const isOnRegisterWizard = ["/register", "/onboarding-wizard"].includes(currentPath)
+
+      // Let the registration wizard show its completion step before redirecting
+      if (isOnRegisterWizard) return
+
       if (user.is_superuser) {
         router.push("/admin")
       } else {
@@ -67,6 +69,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUser = async (authToken: string) => {
     try {
       const userData = await authApi.getCurrentUser(authToken)
+
+      if (isAuthErrorPayload(userData)) {
+        logout()
+        return
+      }
 
       // Validate that userData has the expected shape
       if (isValidUser(userData)) {
@@ -102,7 +109,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const access_token = result.access_token || ""
 
       if (!access_token) {
-        throw new Error("No access token received from the server")
+        const hint = (result as { message?: string }).message
+        throw new Error(
+          hint ||
+            "Login failed — server did not return an access token. Check that the backend is running."
+        )
       }
 
       setToken(access_token)

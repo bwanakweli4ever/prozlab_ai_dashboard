@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, Loader2, MoreHorizontal, Edit, Save, X, Trash2, ChevronLeft, ChevronRight } from "lucide-react"
+import Link from "next/link"
+import { Search, Loader2, MoreHorizontal, Edit, Save, X, Trash2, ChevronLeft, ChevronRight, ShieldAlert } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { toast } from "@/components/ui/use-toast"
@@ -433,10 +434,19 @@ export default function AdminUsersPage() {
                         {user.email}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5">
                           <Badge variant={user.is_active ? "default" : "secondary"}>
                             {user.is_active ? "Active" : "Inactive"}
                           </Badge>
+                          {user.is_banned && <Badge variant="destructive">Banned</Badge>}
+                          {user.is_flagged && !user.is_banned && (
+                            <Badge className="bg-amber-500 hover:bg-amber-500">Flagged</Badge>
+                          )}
+                          {(user.fraud_score ?? 0) >= 55 && !user.is_banned && (
+                            <Badge variant="outline" className="border-orange-300 text-orange-700">
+                              Risk {user.fraud_score}%
+                            </Badge>
+                          )}
                           {user.is_superuser && <Badge variant="destructive">Admin</Badge>}
                         </div>
                       </TableCell>
@@ -459,6 +469,14 @@ export default function AdminUsersPage() {
                             <DropdownMenuItem onClick={() => handleViewProfile(user.id, user.email || undefined)}>
                               View Profile
                             </DropdownMenuItem>
+                            {!user.is_superuser && (
+                              <DropdownMenuItem asChild>
+                                <Link href="/admin/fraud">
+                                  <ShieldAlert className="h-4 w-4 mr-2" />
+                                  Fraud actions
+                                </Link>
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem onClick={() => handleViewProfile(user.id, user.email || undefined).then(() => handleEditProfile())}>
                               Edit Profile
                             </DropdownMenuItem>

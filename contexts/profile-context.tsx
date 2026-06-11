@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { createContext, useState, useEffect, useContext } from "react"
+import { createContext, useState, useEffect, useContext, useCallback, useMemo } from "react"
 import { prozApi } from "@/lib/api"
 import { useAuth } from "./auth-context"
 import type { ProzProfileCreate, ProzProfileResponse, ProzProfileUpdate } from "@/types/api"
@@ -16,6 +16,7 @@ interface ProfileContextProps {
   fetchProfile: () => Promise<void>
   createProfile: (profileData: ProzProfileCreate) => Promise<ProzProfileResponse>
   updateProfile: (profileData: ProzProfileUpdate) => Promise<ProzProfileResponse>
+  ensureMinimalProfile: () => Promise<ProzProfileResponse | null>
   calculateProfileCompletion: () => { percentage: number; missingFields: string[] }
 }
 
@@ -26,6 +27,7 @@ const ProfileContext = createContext<ProfileContextProps>({
   fetchProfile: async () => {},
   createProfile: async () => ({} as ProzProfileResponse),
   updateProfile: async () => ({} as ProzProfileResponse),
+  ensureMinimalProfile: async () => null,
   calculateProfileCompletion: () => ({ percentage: 0, missingFields: [] }),
 })
 
@@ -33,10 +35,13 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [profile, setProfile] = useState<Profile | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const { token } = useAuth()
+  const { token, user } = useAuth()
 
-  const fetchProfile = async () => {
-    if (!token) return
+  const fetchProfile = useCallback(async () => {
+    if (!token) {
+      setProfile(null)
+      return
+    }
 
     setIsLoading(true)
     try {
@@ -45,26 +50,24 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setError(null)
     } catch (error) {
       console.error("Failed to fetch profile:", error)
-      
-      // Check if it's an authentication error
+
       const errorMessage = error instanceof Error ? error.message : String(error)
-      if (errorMessage.includes("Could not validate credentials") || 
-          errorMessage.includes("401") || 
-          errorMessage.includes("403")) {
+      if (
+        errorMessage.includes("Could not validate credentials") ||
+        errorMessage.includes("401") ||
+        errorMessage.includes("403")
+      ) {
         console.warn("Authentication error in profile fetch, user may need to re-login")
-        // Don't set error state for auth errors, just log a warning
-        // The auth context will handle the logout
         setError(null)
       } else {
-        // For other errors, set the error state
         setError(errorMessage)
       }
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [token])
 
-  const createProfile = async (profileData: ProzProfileCreate): Promise<ProzProfileResponse> => {
+  const createProfile = useCallback(async (profileData: ProzProfileCreate): Promise<ProzProfileResponse> => {
     if (!token) {
       throw new Error("You must be logged in to create a profile")
     }
@@ -92,9 +95,9 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [token])
 
-  const updateProfile = async (profileData: ProzProfileUpdate): Promise<ProzProfileResponse> => {
+  const updateProfile = useCallback(async (profileData: ProzProfileUpdate): Promise<ProzProfileResponse> => {
     if (!token) {
       throw new Error("You must be logged in to update a profile")
     }
@@ -122,9 +125,42 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [token])
 
-  const calculateProfileCompletion = (): { percentage: number; missingFields: string[] } => {
+  const ensureMinimalProfile = useCallback(async (): Promise<ProzProfileResponse | null> => {
+    if (!token || !user?.email) return null
+
+    const existing = await prozApi.getOwnProfile(token)
+    if (existing) {
+      setProfile(existing)
+      return existing
+    }
+
+    try {
+      return await createProfile({
+        first_name: user.first_name || "Candidate",
+        last_name: user.last_name || "User",
+        email: user.email,
+        bio: "Professional candidate building their ProzLab profile.",
+        location: "Remote",
+        years_experience: 1,
+        hourly_rate: 50,
+        availability: "full-time",
+        education: "To be updated",
+        preferred_contact_method: "email",
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      if (message.includes("already exists")) {
+        const refetched = await prozApi.getOwnProfile(token)
+        if (refetched) setProfile(refetched)
+        return refetched
+      }
+      throw error
+    }
+  }, [token, user, createProfile])
+
+  const profileCompletion = useMemo((): { percentage: number; missingFields: string[] } => {
     if (!profile) {
       return { percentage: 0, missingFields: [] }
     }
@@ -176,16 +212,44 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     return {
       percentage: totalPercentage,
-      missingFields: [...missingRequired, ...missingOptional]
+      missingFields: [...missingRequired, ...missingOptional],
     }
-  }
+  }, [profile])
+
+  const calculateProfileCompletion = useCallback(
+    () => profileCompletion,
+    [profileCompletion]
+  )
 
   useEffect(() => {
     fetchProfile()
-  }, [token])
+  }, [fetchProfile])
+
+  const contextValue = useMemo(
+    () => ({
+      profile,
+      isLoading,
+      error,
+      fetchProfile,
+      createProfile,
+      updateProfile,
+      ensureMinimalProfile,
+      calculateProfileCompletion,
+    }),
+    [
+      profile,
+      isLoading,
+      error,
+      fetchProfile,
+      createProfile,
+      updateProfile,
+      ensureMinimalProfile,
+      calculateProfileCompletion,
+    ]
+  )
 
   return (
-    <ProfileContext.Provider value={{ profile, isLoading, error, fetchProfile, createProfile, updateProfile, calculateProfileCompletion }}>{children}</ProfileContext.Provider>
+    <ProfileContext.Provider value={contextValue}>{children}</ProfileContext.Provider>
   )
 }
 

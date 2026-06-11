@@ -69,8 +69,20 @@ const config = {
           900: "#0c4a6e",
           950: "#082f49",
           red: "#f15a29",
-          "red-10": "rgba(241, 90, 41, 0.1)", // 10% opacity of the red color
+          "red-10": "rgba(241, 90, 41, 0.1)",
           blue: "#29abe2",
+        },
+        brand: {
+          DEFAULT: "#6366F1",
+          dark: "#4F46E5",
+          light: "#EEF2FF",
+          muted: "#818CF8",
+          surface: "#F5F3FF",
+        },
+        navy: {
+          DEFAULT: "#0F172A",
+          light: "#1E293B",
+          card: "#1a1040",
         },
       },
       borderRadius: {

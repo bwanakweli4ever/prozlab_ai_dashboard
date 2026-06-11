@@ -101,3 +101,104 @@
 .landing-override :where(.bg-card) {
   background-color: transparent !important;
 }
+
+/* Prozlab hiring landing page */
+.landing-page {
+  font-family: var(--font-inter, 'Inter'), system-ui, sans-serif;
+  color: #0f172a;
+}
+
+/* Keep form fields light on hiring/onboarding pages (ignore system dark mode) */
+.landing-page input:not([type="checkbox"]):not([type="radio"]),
+.landing-page textarea,
+.landing-page select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+
+.landing-page input::placeholder,
+.landing-page textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.landing-page input:-webkit-autofill,
+.landing-page input:-webkit-autofill:hover,
+.landing-page input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #0f172a !important;
+  caret-color: #0f172a;
+}
+
+.landing-page label {
+  color: #334155;
+}
+
+/* Candidate dashboard — always light, matches hiring theme */
+.dashboard-shell {
+  color-scheme: light;
+  font-family: var(--font-inter, 'Inter'), system-ui, sans-serif;
+  color: #0f172a;
+  background-color: #f8fafc;
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --primary: 239 84% 67%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 239 84% 67%;
+}
+
+.dashboard-shell input:not([type="checkbox"]):not([type="radio"]),
+.dashboard-shell textarea,
+.dashboard-shell select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+
+.dashboard-shell input::placeholder,
+.dashboard-shell textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+.dashboard-shell label {
+  color: #334155;
+}
+
+.dashboard-shell .bg-card,
+.dashboard-shell [class*="bg-card"] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+.dashboard-shell .bg-background {
+  background-color: #ffffff !important;
+}
+
+.dashboard-shell .bg-muted,
+.dashboard-shell .hover\:bg-muted:hover {
+  background-color: #f1f5f9 !important;
+}
+
+.dashboard-shell .text-muted-foreground {
+  color: #64748b !important;
+}
+
+.landing-dashed-line {
+  background-image: linear-gradient(to right, #c7d2fe 50%, transparent 50%);
+  background-size: 12px 2px;
+  background-repeat: repeat-x;
+}

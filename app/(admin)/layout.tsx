@@ -2,6 +2,7 @@
 
 import React, { useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { ThemeProvider } from "next-themes"
 import { Toaster } from "@/components/ui/toaster"
 import { DashboardSidebar } from "@/components/dashboard/sidebar"
 import { DashboardHeader } from "@/components/dashboard/header"
@@ -40,17 +41,19 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardSidebar 
-        ref={sidebarRef}
-        isAdmin={true} 
-        onMobileMenuToggle={setIsMobileMenuOpen}
-      />
-      <div className="flex flex-1 flex-col md:ml-64">
-        <DashboardHeader onMobileMenuToggle={handleMobileMenuToggle} />
-        <main className="flex-1 overflow-x-hidden px-2 sm:px-4 md:px-6 lg:px-8 pt-0 pb-4">{children}</main>
+    <ThemeProvider attribute="class" forcedTheme="light" disableTransitionOnChange>
+      <div className="dashboard-shell min-h-screen bg-[#F8FAFC]">
+        <DashboardSidebar
+          ref={sidebarRef}
+          isAdmin={true}
+          onMobileMenuToggle={setIsMobileMenuOpen}
+        />
+        <div className="flex flex-1 flex-col md:ml-64">
+          <DashboardHeader onMobileMenuToggle={handleMobileMenuToggle} />
+          <main className="flex-1 overflow-x-hidden px-2 sm:px-4 md:px-6 lg:px-8 pt-0 pb-4">{children}</main>
+        </div>
+        <Toaster />
       </div>
-      <Toaster />
-    </div>
+    </ThemeProvider>
   )
 }

@@ -15,13 +15,13 @@ export default function SettingsPage() {
   const [twoFactor, setTwoFactor] = useState(false)
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-3">
-        <User className="w-5 h-5 text-blue-600" />
-        <h1 className="text-2xl font-bold">Settings</h1>
+        <User className="h-5 w-5 text-brand" />
+        <h1 className="text-[24px] font-bold text-slate-900">Settings</h1>
       </div>
 
-      <Card>
+      <Card className="rounded-2xl border-slate-200/80 bg-white shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Globe className="w-4 h-4" />
@@ -37,7 +37,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="rounded-2xl border-slate-200/80 bg-white shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Bell className="w-4 h-4" />
@@ -62,7 +62,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="rounded-2xl border-slate-200/80 bg-white shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
             <Lock className="w-4 h-4" />
