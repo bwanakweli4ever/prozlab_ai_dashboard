@@ -17,7 +17,7 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "app.prozlab.com",
+        hostname: "api.prozlab.com",
         pathname: "/static/**",
       },
     ],

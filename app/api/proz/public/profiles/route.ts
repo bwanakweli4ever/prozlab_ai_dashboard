@@ -3,7 +3,7 @@ import path from "path"
 import { NextResponse, type NextRequest } from "next/server"
 
 const DEFAULT_BACKEND_URL =
-  process.env.NODE_ENV === "development" ? "http://localhost:8000" : "https://app.prozlab.com"
+  process.env.NODE_ENV === "development" ? "http://localhost:8000" : "https://api.prozlab.com"
 
 const isFrontendHost = (host: string) => {
   const normalized = host.toLowerCase()

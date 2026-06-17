@@ -34,7 +34,7 @@ export const API_BASE_URL = (
 
 const FRONTEND_HOSTNAMES = new Set(["prozlab.com", "www.prozlab.com"])
 const DEFAULT_BACKEND_API_BASE =
-  process.env.NODE_ENV === "development" ? "http://localhost:8000" : "https://app.prozlab.com"
+  process.env.NODE_ENV === "development" ? "http://localhost:8000" : "https://api.prozlab.com"
 
 const getServerBackendBaseUrl = () => {
   if (typeof window !== "undefined") return API_BASE_URL
