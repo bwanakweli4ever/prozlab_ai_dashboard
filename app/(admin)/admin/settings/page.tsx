@@ -37,7 +37,7 @@ export default function AdminSettingsPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="site-description">Site Description</Label>
-                <Input id="site-description" defaultValue="Professional Network Platform" />
+                <Input id="site-description" defaultValue="Talent intelligence platform — skills proven by real work, not interviews" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="contact-email">Contact Email</Label>

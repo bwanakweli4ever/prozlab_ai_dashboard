@@ -9,6 +9,7 @@ import { Star, ArrowLeft, MapPin, Clock, DollarSign, Award, Shield, Mail, Phone,
 import Image from "next/image"
 import Link from "next/link"
 import { publicApi } from "@/lib/api"
+import { normalizeMediaUrl } from "@/lib/utils"
 
 export default function UserProfilePage() {
   const router = useRouter()
@@ -57,12 +58,7 @@ export default function UserProfilePage() {
     load()
   }, [id])
 
-  const getImageUrl = (url?: string) => {
-    if (!url) return null
-    if (url.startsWith("http")) return url
-    const base = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/+$/, "")
-    return `${base}${url.startsWith("/") ? "" : "/"}${url}`
-  }
+  const getImageUrl = (url?: string) => normalizeMediaUrl(url)
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

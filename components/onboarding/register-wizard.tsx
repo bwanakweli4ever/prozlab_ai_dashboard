@@ -504,7 +504,7 @@ export function RegisterWizard() {
                   <ArrowLeft className="h-4 w-4" /> Back
                 </button>
                 <button type="button" onClick={nextStep} className="flex-[2] rounded-xl border-2 border-brand/30 py-3 text-[14px] font-semibold text-brand hover:bg-brand/5">
-                  Start Assessment
+                  Verify Your Work
                 </button>
               </div>
             </div>

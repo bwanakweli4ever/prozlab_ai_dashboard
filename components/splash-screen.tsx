@@ -65,7 +65,7 @@ export function SplashScreen() {
           transition={{ delay: 0.5, duration: 0.8, ease: "easeOut" }}
           className="text-3xl md:text-4xl font-bold text-white text-center"
         >
-          Welcome to Proz Heaven
+          Skills Proven by Real Work
         </motion.h1>
 
         <motion.div
@@ -95,7 +95,7 @@ export function SplashScreen() {
         transition={{ delay: 2, duration: 1 }}
         className="absolute bottom-8 text-white/60 text-sm"
       >
-        Professional Network
+        Talent Intelligence Platform
       </motion.div>
     </div>
   )

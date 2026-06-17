@@ -135,7 +135,7 @@ export default function AIAssistProfilePage() {
       }
       await fetchProfile()
       toast({ title: "Profile saved", description: "Your profile is ready to edit and verify." })
-      router.push("/dashboard/profile")
+      router.push("/dashboard/profile/view?edit=1")
     } catch (e: any) {
       toast({ title: "Update failed", description: e?.message || "Try again", variant: "destructive" })
     } finally {
@@ -200,7 +200,7 @@ export default function AIAssistProfilePage() {
           <div>
             <h1 className={dashboardPageTitleClass}>AI Profile Assistant</h1>
             <p className={`mt-1 ${dashboardPageSubtitleClass}`}>
-              Upload your resume or review your current profile — AI will suggest fields to complete.
+              Import your background or review your profile — AI will help highlight your proven skills and experience.
             </p>
           </div>
         </div>

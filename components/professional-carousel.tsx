@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { prozProfilesApi } from "@/lib/api"
+import { getProfileImageUrl } from "@/lib/utils"
 import Link from "next/link"
 
 type ProfessionalProfile = {
@@ -94,15 +95,8 @@ export function ProfessionalCarousel() {
     }
   }
 
-  const getProfileImageUrl = (profile: ProfessionalProfile): string => {
-    if (!profile.profile_image_url) {
-      return "/placeholder.svg?height=60&width=60"
-    }
-    if (profile.profile_image_url.startsWith("http")) {
-      return profile.profile_image_url
-    }
-    const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-    return `${base}${profile.profile_image_url.startsWith("/") ? "" : "/"}${profile.profile_image_url}`
+  const getProfileImageUrlForCard = (profile: ProfessionalProfile): string => {
+    return getProfileImageUrl(profile.profile_image_url, "/placeholder.svg?height=60&width=60")
   }
 
   if (loading) {
@@ -188,7 +182,7 @@ export function ProfessionalCarousel() {
                       <div className="w-full h-full rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700">
                         {pro.profile_image_url ? (
                           <Image
-                            src={getProfileImageUrl(pro) || "/placeholder.svg"}
+                            src={getProfileImageUrlForCard(pro)}
                             alt={`${pro.first_name} ${pro.last_name}`}
                             width={80}
                             height={80}

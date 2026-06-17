@@ -36,9 +36,11 @@ import {
   dashboardPageTitleClass,
 } from "@/lib/dashboard-styles"
 import type { ProzProfileResponse, ProzProfileUpdate } from "@/types/api"
-import { cn } from "@/lib/utils"
+import { cn, getProfileImageUrl } from "@/lib/utils"
 
 type SectionId = "personal" | "summary" | "experience" | "education" | "contact"
+
+export type { SectionId }
 
 type FormValues = {
   firstName: string
@@ -147,18 +149,28 @@ function formToDraft(values: FormValues, email?: string | null) {
 
 interface EditProfileSectionsProps {
   profile: ProzProfileResponse
+  initialSection?: SectionId
+  onPreview?: () => void
 }
 
-export function EditProfileSections({ profile }: EditProfileSectionsProps) {
+export function EditProfileSections({
+  profile,
+  initialSection = "personal",
+  onPreview,
+}: EditProfileSectionsProps) {
   const router = useRouter()
   const { token, user } = useAuth()
   const { updateProfile, fetchProfile } = useProfile()
-  const [activeSection, setActiveSection] = useState<SectionId>("personal")
+  const [activeSection, setActiveSection] = useState<SectionId>(initialSection)
   const [savingSection, setSavingSection] = useState<SectionId | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiResult, setAiResult] = useState<AiResult | null>(null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+
+  useEffect(() => {
+    setActiveSection(initialSection)
+  }, [initialSection])
 
   const form = useForm<FormValues>({
     defaultValues: {
@@ -299,19 +311,21 @@ export function EditProfileSections({ profile }: EditProfileSectionsProps) {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <div className="mb-6">
-        <Link
-          href="/dashboard/profile/view"
-          className="mb-3 inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-500 hover:text-brand"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to profile
-        </Link>
-        <h1 className={dashboardPageTitleClass}>Edit Profile</h1>
-        <p className={dashboardPageSubtitleClass}>
-          Complete one section at a time. Use AI to polish each part before saving.
-        </p>
-      </div>
+      {!onPreview && (
+        <div className="mb-6">
+          <Link
+            href="/dashboard/profile/view"
+            className="mb-3 inline-flex items-center gap-1.5 text-[13px] font-medium text-slate-500 hover:text-brand"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to profile
+          </Link>
+          <h1 className={dashboardPageTitleClass}>Edit Profile</h1>
+          <p className={dashboardPageSubtitleClass}>
+            Complete one section at a time. Use AI to polish each part before saving.
+          </p>
+        </div>
+      )}
 
       <div className="grid gap-5 lg:grid-cols-[220px_1fr]">
         {/* Section nav */}
@@ -401,7 +415,7 @@ export function EditProfileSections({ profile }: EditProfileSectionsProps) {
                           <Image src={imagePreview} alt="Preview" width={96} height={96} className="h-full w-full object-cover" />
                         ) : profile.profile_image_url ? (
                           <Image
-                            src={profile.profile_image_url}
+                            src={getProfileImageUrl(profile.profile_image_url)}
                             alt="Profile"
                             width={96}
                             height={96}
@@ -661,7 +675,11 @@ export function EditProfileSections({ profile }: EditProfileSectionsProps) {
                     <ArrowRight className="ml-1 h-4 w-4" />
                   </Button>
                 ) : (
-                  <Button type="button" className="bg-brand hover:bg-brand-dark" onClick={() => router.push("/dashboard/profile/view")}>
+                  <Button
+                    type="button"
+                    className="bg-brand hover:bg-brand-dark"
+                    onClick={() => (onPreview ? onPreview() : router.push("/dashboard/profile/view"))}
+                  >
                     View profile
                   </Button>
                 )}

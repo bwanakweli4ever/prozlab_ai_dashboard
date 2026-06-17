@@ -139,7 +139,7 @@ export default function AdminAssessmentsPage() {
         })),
       })
       toast({
-        title: decision === "verified" ? "Assessment approved" : decision === "rejected" ? "Assessment rejected" : "Sent back for revision",
+        title: decision === "verified" ? "Work verification approved" : decision === "rejected" ? "Work verification rejected" : "Sent back for revision",
       })
       setDetailOpen(false)
       await loadProfiles()
@@ -160,9 +160,9 @@ export default function AdminAssessmentsPage() {
     <div className="mx-auto max-w-6xl space-y-6 py-4">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Assessment Management</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Work Verification Review</h1>
           <p className="mt-1 text-[14px] text-slate-500">
-            Review identity verification, work experience, and skills assessments submitted by candidates.
+            Review identity verification, work experience, and real-world evidence submitted by professionals.
           </p>
         </div>
         <Link href="/admin/verifications">

@@ -42,7 +42,7 @@ export function Footer() {
               </button>
             </div>
             <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm leading-relaxed">
-              Connecting professionals with opportunities. Building the future of work through trusted relationships and quality service.
+              A talent intelligence platform that predicts hiring success using verified skills, real-world assessments, and performance data.
             </p>
             <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-500">
               <MapPin className="w-4 h-4" />

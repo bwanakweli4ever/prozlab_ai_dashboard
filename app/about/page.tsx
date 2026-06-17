@@ -16,33 +16,33 @@ export default function AboutPage() {
 
   const pillars = [
     {
-      title: "Purpose-Driven Innovation",
+      title: "Work-Proven Talent",
       icon: Rocket,
       color: "bg-blue-500",
       points: [
-        "Design, build, develop, and deliver solutions with impact",
-        "Turn bold ideas into products that help real people",
-        "Relentless focus on usability and outcomes",
+        "Verify skills through real deliverables, not interviews",
+        "Surface professionals who actually succeed on the job",
+        "Replace resume guesswork with performance evidence",
       ],
     },
     {
-      title: "Community Impact",
+      title: "Talent Intelligence",
       icon: Users,
       color: "bg-emerald-500",
       points: [
-        "Strengthen communities through access and opportunity",
-        "Bridge professionals with meaningful work",
-        "Create pathways for sustainable growth",
+        "Predict hiring success with verified work history",
+        "Match employers to proven performers, not applicants",
+        "Move beyond job boards toward data-driven hiring",
       ],
     },
     {
-      title: "Quality & Trust",
+      title: "Trust Through Proof",
       icon: Shield,
       color: "bg-amber-500",
       points: [
-        "Excellence and transparency in every engagement",
-        "Reliable delivery with measurable standards",
-        "Long-term relationships built on trust",
+        "Every profile backed by verifiable work signals",
+        "Transparent performance data employers can rely on",
+        "Hire with confidence—not interview theater",
       ],
     },
   ]
@@ -150,8 +150,8 @@ export default function AboutPage() {
                   viewport={{ once: true, amount: 0.6 }}
                   transition={{ duration: 0.45, delay: 0.05 }}
                 >
-                  Prozlab is a dynamic <em>lab of professionals</em> driven by a shared passion for <strong>innovation, excellence, and transformative technology</strong>.
-                  We specialize in delivering high-quality professional services with a focus on technology, networking, and IT solutions designed to empower organizations and individuals alike.
+                  Prozlab is a <strong>talent intelligence platform</strong> built on a simple belief: skills should be proven by real work, not interviews.
+                  We help employers hire proven professionals—not just qualified applicants—using verified work history, performance signals, and intelligent matching.
                 </motion.p>
                 <motion.p
                   className="text-base text-gray-800 dark:text-gray-200 leading-relaxed"
@@ -160,8 +160,8 @@ export default function AboutPage() {
                   viewport={{ once: true, amount: 0.6 }}
                   transition={{ duration: 0.45, delay: 0.15 }}
                 >
-                  At Prozlab, we believe <em>technology is more than just a tool</em> — it's the foundation for growth, efficiency, and progress.
-                  Our expert team works tirelessly to design, build, and implement solutions that enhance <strong>performance, strengthen connectivity</strong>, and enable businesses to achieve their full potential.
+                  Most platforms claim they vet talent. Employers still complain that candidates perform differently on the job.
+                  Prozlab predicts hiring success using <strong>verified skills, real-world assessments, and performance data</strong>—so companies hire professionals who actually deliver.
                 </motion.p>
                 <motion.p
                   className="text-base text-gray-800 dark:text-gray-200 leading-relaxed"
@@ -170,8 +170,8 @@ export default function AboutPage() {
                   viewport={{ once: true, amount: 0.6 }}
                   transition={{ duration: 0.45, delay: 0.25 }}
                 >
-                  Through a commitment to <em>precision, performance, and progress</em>, we ensure that every project we undertake meets the highest standards of quality and reliability.
-                  Whether it's optimizing IT infrastructure, enhancing network systems, or crafting innovative digital solutions, <strong>Prozlab stands as a trusted partner</strong> dedicated to driving success in an ever-evolving digital landscape.
+                  We&apos;re not another job board. Prozlab is where the highest-value companies in hiring are moving—
+                  toward <strong>talent intelligence</strong> that identifies who will succeed in the role, not just who passes the interview.
                 </motion.p>
                   </div>
                 </div>

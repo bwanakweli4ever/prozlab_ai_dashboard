@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Slider } from "@/components/ui/slider"
 import Link from "next/link"
 import { prozProfilesApi } from "@/lib/api"
+import { getProfileImageUrl } from "@/lib/utils"
 import { ProzLabLogo } from "@/components/prozlab-logo"
 import { SPECIALTIES, AVAILABILITY_OPTIONS, SPECIALTY_SYNONYMS } from "@/lib/constants"
 
@@ -225,7 +226,7 @@ export default function BrowseProz() {
       <div className="container mx-auto px-4 sm:px-6 pt-24 md:pt-28 pb-6 md:pb-8">
         {/* Mobile filters toggle */}
         <div className="flex items-center justify-between mb-4 lg:hidden">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Verified Professionals</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Work-Verified Professionals</h2>
           <Button variant="outline" size="sm" onClick={() => setShowFiltersMobile((v) => !v)} className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">
             <Filter className="w-4 h-4 mr-2" /> Filters
           </Button>
@@ -331,7 +332,7 @@ export default function BrowseProz() {
 
           <div className="lg:col-span-3">
             <div className="hidden lg:flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Verified Professionals</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Work-Verified Professionals</h2>
               <p className="text-gray-600 dark:text-gray-300">Page {page} of {totalPages}</p>
             </div>
 
@@ -446,7 +447,7 @@ export default function BrowseProz() {
                         <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center border-2 border-white dark:border-gray-800 shadow-lg">
                           {pro.profile_image_url ? (
                             <img
-                              src={pro.profile_image_url}
+                              src={getProfileImageUrl(pro.profile_image_url)}
                               alt={pro.name}
                               className="w-full h-full object-cover"
                               onError={(e) => {

@@ -32,7 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { cn } from "@/lib/utils"
+import { cn, getProfileImageUrl } from "@/lib/utils"
 
 export interface TalentProfile {
   id: string
@@ -236,7 +236,7 @@ export function TalentVerificationBoard({
           <div>
             <h1 className="text-[26px] font-bold tracking-tight text-slate-900">Talent Verification</h1>
             <p className="mt-1 text-[14px] text-slate-500">
-              Review and verify professionals before they go live on the platform.
+              Review work-verified professionals before they go live — hire based on proof, not interviews.
             </p>
           </div>
           <div className="relative w-full sm:w-72">
@@ -384,7 +384,7 @@ export function TalentVerificationBoard({
                 >
                   <div className="flex items-start gap-3">
                     <Avatar className="h-12 w-12 border border-slate-100">
-                      <AvatarImage src={profile.profile_image_url} />
+                      <AvatarImage src={getProfileImageUrl(profile.profile_image_url)} />
                       <AvatarFallback className="bg-slate-100 text-slate-600 text-[13px]">
                         {profile.first_name?.[0]}{profile.last_name?.[0]}
                       </AvatarFallback>
@@ -425,7 +425,7 @@ export function TalentVerificationBoard({
                     )}
                     {assessmentOk && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-medium text-brand">
-                        <Star className="h-3 w-3" /> Assessment {score}%
+                        <Star className="h-3 w-3" /> Work Verified {score}%
                       </span>
                     )}
                   </div>
@@ -509,7 +509,7 @@ export function TalentVerificationBoard({
               <div className="border-b border-slate-100 p-4">
                 <div className="flex gap-3">
                   <Avatar className="h-14 w-14">
-                    <AvatarImage src={selectedProfile.profile_image_url} />
+                    <AvatarImage src={getProfileImageUrl(selectedProfile.profile_image_url)} />
                     <AvatarFallback>{selectedProfile.first_name?.[0]}{selectedProfile.last_name?.[0]}</AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
@@ -551,7 +551,7 @@ export function TalentVerificationBoard({
                 <p className="mb-1 text-[12px] font-semibold uppercase tracking-wide text-slate-400">Checklist</p>
                 <ChecklistRow ok={reviewChecklist.identity} label="Identity Verified" />
                 <ChecklistRow ok={reviewChecklist.portfolio} label="Portfolio Verified" />
-                <ChecklistRow ok={reviewChecklist.assessment} label="Assessment Passed" />
+                <ChecklistRow ok={reviewChecklist.assessment} label="Work Evidence Verified" />
                 <ChecklistRow ok={reviewChecklist.experience} label="Experience Verified" />
                 <ChecklistRow ok={reviewChecklist.references} label="References" missing={!reviewChecklist.references} />
               </div>

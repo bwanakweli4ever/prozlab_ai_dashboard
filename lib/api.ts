@@ -122,10 +122,21 @@ async function handleResponse<T>(response: Response): Promise<T> {
         }
 
         if (errorData.detail) {
-          errorMessage = errorData.detail
+          if (Array.isArray(errorData.detail)) {
+            errorMessage = errorData.detail
+              .map((item: { msg?: string; loc?: Array<string | number> }) => {
+                const field = item.loc?.filter((part) => typeof part === "string").pop()
+                return field ? `${field}: ${item.msg ?? "Invalid value"}` : item.msg ?? "Invalid value"
+              })
+              .join("; ")
+          } else if (typeof errorData.detail === "string") {
+            errorMessage = errorData.detail
+          } else {
+            errorMessage = JSON.stringify(errorData.detail)
+          }
           
           // Handle specific business logic errors that should not be treated as system errors
-          if (errorData.detail.includes("Task already assigned to this professional")) {
+          if (typeof errorData.detail === "string" && errorData.detail.includes("Task already assigned to this professional")) {
             // This is a business logic response, not an error - return it instead of throwing
             console.log("Business logic response:", errorData.detail)
             return { 
@@ -136,16 +147,19 @@ async function handleResponse<T>(response: Response): Promise<T> {
           }
           
           // Handle authentication errors that should trigger logout
-          if (errorData.detail.includes("Could not validate credentials") || 
+          if (
+            typeof errorData.detail === "string" &&
+            (errorData.detail.includes("Could not validate credentials") ||
               errorData.detail.includes("Invalid credentials") ||
               errorData.detail.includes("Incorrect email or password") ||
-              errorData.detail.includes("Token has expired")) {
+              errorData.detail.includes("Token has expired"))
+          ) {
             // This is an authentication error - return it instead of throwing
             console.warn("Authentication error response:", errorData.detail)
-            return { 
-              success: false, 
-              message: errorData.detail, 
-              isAuthError: true 
+            return {
+              success: false,
+              message: errorData.detail,
+              isAuthError: true,
             } as any
           }
         } else if (typeof errorData === "string") {
@@ -941,6 +955,20 @@ export const verificationApi = {
     return handleResponse<VerificationEvidence>(response)
   },
 
+  uploadIdentityDocument: async (token: string, file: File): Promise<FileUploadResponse> => {
+    const formData = new FormData()
+    formData.append("file", file)
+
+    const response = await fetch(`${API_BASE_URL}/api/v1/proz/verification/identity-document/upload`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    })
+    return handleResponse<FileUploadResponse>(response)
+  },
+
   deleteEvidence: async (token: string, evidenceId: string): Promise<void> => {
     const response = await fetch(`${API_BASE_URL}/api/v1/proz/verification/evidence/${evidenceId}`, {
       method: "DELETE",
@@ -969,9 +997,21 @@ export const verificationApi = {
     return handleResponse<{
       valid: boolean
       username?: string
+      name?: string
+      bio?: string
+      avatar_url?: string
       public_repos?: number
-      followers?: number
+      account_created_at?: string
       profile_url?: string
+      top_repos?: Array<{
+        name: string
+        language?: string
+        description?: string
+        url?: string
+        stars?: number
+        updated_at?: string
+      }>
+      followers?: number
       message?: string
     }>(response)
   },

@@ -1,13 +1,50 @@
 "use client"
 
 import Link from "next/link"
+import { useCallback, useMemo } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Loader2, Sparkles, ShieldCheck } from "lucide-react"
+import { Eye, Loader2, Pencil, ShieldCheck, Sparkles } from "lucide-react"
 import { useProfile } from "@/contexts/profile-context"
 import { CandidateProfileView } from "@/components/dashboard/candidate-profile-view"
+import {
+  EditProfileSections,
+  type SectionId,
+} from "@/components/dashboard/edit-profile-sections"
+
+const SECTION_IDS: SectionId[] = ["personal", "summary", "experience", "education", "contact"]
+
+function parseSection(value: string | null): SectionId {
+  if (value && SECTION_IDS.includes(value as SectionId)) {
+    return value as SectionId
+  }
+  return "personal"
+}
 
 export default function ViewProfilePage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const { profile, isLoading, fetchProfile, ensureMinimalProfile } = useProfile()
+
+  const isEditing = searchParams.get("edit") === "1" || searchParams.get("edit") === "true"
+  const activeSection = useMemo(
+    () => parseSection(searchParams.get("section")),
+    [searchParams]
+  )
+
+  const openEdit = useCallback(
+    (section?: SectionId) => {
+      const params = new URLSearchParams()
+      params.set("edit", "1")
+      if (section) params.set("section", section)
+      router.push(`/dashboard/profile/view?${params.toString()}`)
+    },
+    [router]
+  )
+
+  const closeEdit = useCallback(() => {
+    router.push("/dashboard/profile/view")
+  }, [router])
 
   if (isLoading) {
     return (
@@ -49,6 +86,50 @@ export default function ViewProfilePage() {
   }
 
   return (
-    <CandidateProfileView profile={profile} />
+    <div className="mx-auto max-w-6xl">
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-[22px] font-bold tracking-tight text-slate-900">
+            {isEditing ? "Edit Profile" : "Your Profile"}
+          </h1>
+          <p className="mt-1 text-[13px] text-slate-500">
+            {isEditing
+              ? "Update your details section by section, then preview how employers see you."
+              : "This is your public profile preview. Employers see this when evaluating you."}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {isEditing ? (
+            <Button variant="outline" onClick={closeEdit}>
+              <Eye className="mr-2 h-4 w-4" />
+              Preview profile
+            </Button>
+          ) : (
+            <>
+              <Button asChild variant="outline">
+                <Link href="/dashboard/profile/ai-assist">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  AI assist
+                </Link>
+              </Button>
+              <Button className="bg-brand hover:bg-brand-dark" onClick={() => openEdit()}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit profile
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {isEditing ? (
+        <EditProfileSections
+          profile={profile}
+          initialSection={activeSection}
+          onPreview={closeEdit}
+        />
+      ) : (
+        <CandidateProfileView profile={profile} onEdit={openEdit} />
+      )}
+    </div>
   )
 }

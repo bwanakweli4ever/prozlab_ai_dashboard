@@ -127,7 +127,7 @@ export default function RequestServicePage() {
               Request Professional Services
             </h1>
             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              Tell us about your project and we'll connect you with qualified professionals who can bring your vision to life.
+              Tell us about your project and we'll connect you with work-verified professionals proven to deliver—not just qualified on paper.
             </p>
             <div className="flex items-center justify-center gap-4 mt-6">
               <Badge variant="secondary" className="px-3 py-1">

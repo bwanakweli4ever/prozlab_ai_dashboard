@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { CalendarDays, MapPin, Mail, Phone, Globe, Linkedin, Clock, DollarSign, Award } from "lucide-react"
 import type { ProzProfileResponse } from "@/types/api"
+import { getProfileImageUrl } from "@/lib/utils"
 
 interface ProfileViewProps {
   profile: ProzProfileResponse
@@ -29,7 +30,7 @@ export function ProfileView({ profile, isPublic = false }: ProfileViewProps) {
           <div className="relative flex flex-col md:flex-row gap-4 items-center md:items-end">
             <Avatar className="h-32 w-32 border-4 border-background shadow-lg">
               <AvatarImage 
-                src={profile.profile_image_url || "/placeholder.svg"} 
+                src={getProfileImageUrl(profile.profile_image_url)} 
                 alt={fullName}
                 onError={(e) => {
                   const target = e.target as HTMLImageElement

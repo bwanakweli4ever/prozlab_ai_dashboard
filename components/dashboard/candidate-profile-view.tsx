@@ -18,6 +18,7 @@ import {
   Languages,
   Mail,
   MapPin,
+  Pencil,
   Phone,
   Rocket,
   Star,
@@ -27,7 +28,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { useProfile } from "@/contexts/profile-context"
 import type { ProzProfileResponse } from "@/types/api"
-import { cn } from "@/lib/utils"
+import { cn, getProfileImageUrl } from "@/lib/utils"
 
 type ExtendedProfile = ProzProfileResponse & {
   skills?: string[]
@@ -251,11 +252,47 @@ function parseBioBullets(bio?: string): string[] {
   return []
 }
 
-interface CandidateProfileViewProps {
-  profile: ExtendedProfile
+function formatAvailabilityLabel(value?: string): string {
+  if (!value?.trim()) return ""
+  const normalized = value.replace(/-/g, " ").trim()
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1)
 }
 
-export function CandidateProfileView({ profile }: CandidateProfileViewProps) {
+function isUnavailableStatus(value?: string): boolean {
+  if (!value?.trim()) return false
+  return /not available|unavailable|closed|none/i.test(value)
+}
+
+function getAvailabilityStatus(value?: string): {
+  isSet: boolean
+  label: string
+  isOpen: boolean
+  heroText: string
+} {
+  const isSet = Boolean(value?.trim())
+  const label = formatAvailabilityLabel(value)
+  const isOpen = isSet && !isUnavailableStatus(value)
+  const heroText = !isSet
+    ? "Set availability"
+    : isOpen
+      ? "Available for work"
+      : label
+
+  return { isSet, label, isOpen, heroText }
+}
+
+interface CandidateProfileViewProps {
+  profile: ExtendedProfile
+  onEdit?: (section?: "personal" | "summary" | "experience" | "education" | "contact") => void
+}
+
+function profileEditHref(section?: "personal" | "summary" | "experience" | "education" | "contact") {
+  const params = new URLSearchParams({ edit: "1" })
+  if (section) params.set("section", section)
+  return `/dashboard/profile/view?${params.toString()}`
+}
+
+export function CandidateProfileView({ profile, onEdit }: CandidateProfileViewProps) {
   const router = useRouter()
   const { calculateProfileCompletion } = useProfile()
   const [bioExpanded, setBioExpanded] = useState(false)
@@ -285,6 +322,7 @@ export function CandidateProfileView({ profile }: CandidateProfileViewProps) {
   const projectCount = Math.max(projects.length, profile.review_count || 0, 1)
   const displayRate = profile.hourly_rate && profile.hourly_rate > 0 ? profile.hourly_rate : 40
   const visibilityBoost = Math.max(8, 100 - percentage)
+  const availabilityStatus = getAvailabilityStatus(profile.availability)
 
   const bioText =
     profile.bio ||
@@ -304,10 +342,18 @@ export function CandidateProfileView({ profile }: CandidateProfileViewProps) {
     },
   ]
 
+  const openEdit = (section?: "personal" | "summary" | "experience" | "education" | "contact") => {
+    if (onEdit) {
+      onEdit(section)
+      return
+    }
+    router.push(profileEditHref(section))
+  }
+
   const quickActions = [
     { title: "Upload Work Sample", icon: Upload, href: "/dashboard/verification" },
-    { title: "Take Skill Assessment", icon: ClipboardCheck, href: "/dashboard/verification" },
-    { title: "Browse Jobs", icon: Briefcase, href: "/dashboard/tasks" },
+    { title: "Verify Your Work", icon: ClipboardCheck, href: "/dashboard/verification" },
+    { title: "View Opportunities", icon: Briefcase, href: "/dashboard/tasks" },
     { title: "Invite & Earn", icon: Gift, href: "/dashboard" },
   ]
 
@@ -339,18 +385,35 @@ export function CandidateProfileView({ profile }: CandidateProfileViewProps) {
                   <span className="text-[14px] font-normal opacity-75"> /hr</span>
                 </p>
                 <p className="mt-1.5 flex items-center justify-end gap-1.5 text-[12px] font-medium">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]" />
-                  Available for work
+                  <span
+                    className={cn(
+                      "h-2 w-2 rounded-full",
+                      availabilityStatus.isOpen
+                        ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]"
+                        : "bg-slate-300"
+                    )}
+                  />
+                  {availabilityStatus.heroText}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="relative z-10 rounded-b-2xl bg-white px-6 pb-6 pt-1">
-            <div className="-mt-[68px] flex flex-col gap-4 sm:flex-row sm:items-end">
-              <div className="relative shrink-0">
+          <div className="relative z-10 rounded-b-2xl bg-white px-6 pb-6 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="absolute right-4 top-4 hidden h-8 gap-1.5 rounded-lg border-slate-200 text-[12px] font-semibold text-slate-700 sm:inline-flex"
+              onClick={() => openEdit()}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Edit profile
+            </Button>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+              <div className="relative shrink-0 -mt-[72px]">
                 <Avatar className="h-[116px] w-[116px] border-[5px] border-white shadow-xl">
-                  <AvatarImage src={profile.profile_image_url || "/placeholder.svg"} alt={fullName} />
+                  <AvatarImage src={getProfileImageUrl(profile.profile_image_url)} alt={fullName} />
                   <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-violet-600 text-3xl font-semibold text-white">
                     {initials}
                   </AvatarFallback>
@@ -358,7 +421,7 @@ export function CandidateProfileView({ profile }: CandidateProfileViewProps) {
                 <span className="absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-white bg-emerald-500" />
               </div>
 
-              <div className="min-w-0 flex-1 overflow-hidden pb-0.5 pr-2">
+              <div className="min-w-0 flex-1 overflow-hidden pb-0.5 pr-2 sm:pt-12">
                 <div className="flex flex-wrap items-center gap-2">
                   <h1 className="text-[22px] font-bold tracking-tight text-slate-900">{fullName}</h1>
                   {(isVerified || skillVerified) && (
@@ -367,12 +430,12 @@ export function CandidateProfileView({ profile }: CandidateProfileViewProps) {
                     </span>
                   )}
                 </div>
-                <p className="mt-1 line-clamp-2 text-[14px] font-medium leading-snug text-slate-600">
+                <p className="mt-1 line-clamp-2 text-[14px] font-medium leading-snug text-slate-700">
                   {deriveHeadline(profile, skills)}
                 </p>
                 {profile.location && (
-                  <p className="mt-1.5 flex items-center gap-1 text-[13px] text-slate-500">
-                    <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                  <p className="mt-1.5 flex items-center gap-1.5 text-[13px] font-semibold text-slate-800">
+                    <MapPin className="h-3.5 w-3.5 shrink-0 text-brand" />
                     <span className="truncate">{profile.location}</span>
                   </p>
                 )}
@@ -397,7 +460,7 @@ export function CandidateProfileView({ profile }: CandidateProfileViewProps) {
                     )}
                   >
                     <Star className="h-3.5 w-3.5 fill-current" />
-                    Top 5% Assessment Score
+                    Top 5% Work Verification Score
                   </span>
                 </div>
               </div>
@@ -422,7 +485,17 @@ export function CandidateProfileView({ profile }: CandidateProfileViewProps) {
 
         {/* About Me */}
         <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-          <h2 className="text-[15px] font-bold text-slate-900">About Me</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-[15px] font-bold text-slate-900">About Me</h2>
+            <button
+              type="button"
+              onClick={() => openEdit("summary")}
+              className="inline-flex items-center gap-1 text-[12px] font-semibold text-brand hover:underline"
+            >
+              <Pencil className="h-3 w-3" />
+              Edit
+            </button>
+          </div>
           <div className="mt-4 grid gap-6 lg:grid-cols-[1fr_200px]">
             <div className="min-w-0 pr-2">
               <p className="break-words text-[14px] leading-[1.7] text-slate-600 whitespace-pre-line">{bioPreview}</p>
@@ -475,7 +548,17 @@ export function CandidateProfileView({ profile }: CandidateProfileViewProps) {
 
         {/* Skills */}
         <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-          <h2 className="text-[15px] font-bold text-slate-900">Skills</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-[15px] font-bold text-slate-900">Skills</h2>
+            <button
+              type="button"
+              onClick={() => openEdit("summary")}
+              className="inline-flex items-center gap-1 text-[12px] font-semibold text-brand hover:underline"
+            >
+              <Pencil className="h-3 w-3" />
+              Edit
+            </button>
+          </div>
           <div className="mt-4 flex flex-wrap gap-2">
             {visibleSkills.length > 0 ? (
               <>
@@ -507,9 +590,13 @@ export function CandidateProfileView({ profile }: CandidateProfileViewProps) {
             ) : (
               <p className="text-[13px] leading-relaxed text-slate-500">
                 No short skill tags yet.{" "}
-                <Link href="/dashboard/profile" className="font-semibold text-brand hover:underline">
+                <button
+                  type="button"
+                  onClick={() => openEdit("summary")}
+                  className="font-semibold text-brand hover:underline"
+                >
                   Add skills in Edit Profile
-                </Link>{" "}
+                </button>{" "}
                 — education history stays in Experience below.
               </p>
             )}
@@ -601,7 +688,17 @@ export function CandidateProfileView({ profile }: CandidateProfileViewProps) {
 
         {/* Experience */}
         <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
-          <h2 className="text-[15px] font-bold text-slate-900">Experience</h2>
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-[15px] font-bold text-slate-900">Experience</h2>
+            <button
+              type="button"
+              onClick={() => openEdit("experience")}
+              className="inline-flex items-center gap-1 text-[12px] font-semibold text-brand hover:underline"
+            >
+              <Pencil className="h-3 w-3" />
+              Edit
+            </button>
+          </div>
           <div className="relative mt-5 pl-6 pr-2">
             <span className="absolute left-0 top-1.5 h-3 w-3 rounded-full border-[3px] border-brand bg-white" />
             <span className="absolute bottom-0 left-[5px] top-4 w-0.5 bg-indigo-100" />
@@ -667,7 +764,9 @@ export function CandidateProfileView({ profile }: CandidateProfileViewProps) {
           </p>
           <Button
             className="mt-4 w-full rounded-xl bg-brand py-5 text-[14px] font-semibold shadow-md shadow-indigo-200 hover:bg-brand-dark"
-            onClick={() => router.push(percentage >= 72 ? "/dashboard/verification" : "/dashboard/profile")}
+                onClick={() =>
+                  router.push(percentage >= 72 ? "/dashboard/verification" : profileEditHref())
+                }
           >
             Complete Profile
           </Button>
@@ -677,7 +776,7 @@ export function CandidateProfileView({ profile }: CandidateProfileViewProps) {
             <ChecklistRow done={hasExperience} label="Work Experience" />
             <ChecklistRow done={hasSkills} label="Skills" />
             <ChecklistRow done={hasPortfolio} label="Portfolio" />
-            <ChecklistRow done={skillVerified} pending={skillPending && !skillVerified} label="Assessments" />
+            <ChecklistRow done={skillVerified} pending={skillPending && !skillVerified} label="Work Verification" />
           </ul>
         </div>
 
@@ -689,15 +788,48 @@ export function CandidateProfileView({ profile }: CandidateProfileViewProps) {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[13px] font-bold text-slate-900">Availability</p>
-              <p className="mt-1 text-[12px] leading-relaxed text-slate-500">
-                Let employers know when you&apos;re open for new opportunities.
-              </p>
-              <Link
-                href="/dashboard/profile"
-                className="mt-2 inline-block text-[12px] font-semibold text-brand hover:underline"
-              >
-                Set Availability
-              </Link>
+              {availabilityStatus.isSet ? (
+                <>
+                  <div className="mt-2 flex items-center gap-2">
+                    <span
+                      className={cn(
+                        "h-2 w-2 rounded-full",
+                        availabilityStatus.isOpen
+                          ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]"
+                          : "bg-slate-400"
+                      )}
+                    />
+                    <span className="text-[13px] font-semibold capitalize text-slate-800">
+                      {availabilityStatus.label}
+                    </span>
+                  </div>
+                  <p className="mt-1.5 text-[12px] leading-relaxed text-slate-500">
+                    {availabilityStatus.isOpen
+                      ? "Employers can see you're open to new opportunities."
+                      : "Your profile shows you're not currently open to new work."}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => openEdit("experience")}
+                    className="mt-2 inline-block text-[12px] font-semibold text-brand hover:underline"
+                  >
+                    Edit availability
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="mt-1 text-[12px] leading-relaxed text-slate-500">
+                    Let employers know when you&apos;re open for new opportunities.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => openEdit("experience")}
+                    className="mt-2 inline-block text-[12px] font-semibold text-brand hover:underline"
+                  >
+                    Set Availability
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

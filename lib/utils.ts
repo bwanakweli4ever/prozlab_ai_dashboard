@@ -16,7 +16,11 @@ export function normalizeMediaUrl(value?: string | null, baseUrl: string = DEFAU
     try {
       const parsed = new URL(value)
       if (UNSAFE_MEDIA_HOSTS.has(parsed.hostname.toLowerCase())) {
-        return `${sanitizedBase}${parsed.pathname}${parsed.search}${parsed.hash}`
+        let path = `${parsed.pathname}${parsed.search}${parsed.hash}`
+        if (path.startsWith("/uploads/")) {
+          path = `/static/${path.slice("/uploads/".length)}`
+        }
+        return `${sanitizedBase}${path}`
       }
       return value
     } catch {
@@ -24,8 +28,18 @@ export function normalizeMediaUrl(value?: string | null, baseUrl: string = DEFAU
     }
   }
 
-  const path = value.startsWith("/") ? value : `/${value}`
+  let path = value.startsWith("/") ? value : `/${value}`
+  if (path.startsWith("/uploads/")) {
+    path = `/static/${path.slice("/uploads/".length)}`
+  }
   return `${sanitizedBase}${path}`
+}
+
+export function getProfileImageUrl(
+  value?: string | null,
+  fallback = "/placeholder.svg"
+): string {
+  return normalizeMediaUrl(value) ?? fallback
 }
 
 export function cn(...inputs: ClassValue[]) {

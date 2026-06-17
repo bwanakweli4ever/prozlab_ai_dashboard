@@ -87,7 +87,7 @@ export const DashboardSidebar = React.forwardRef<
     ? [
         { title: "Dashboard", href: "/admin", icon: Home },
         { title: "Talent Verification", href: "/admin/verifications", icon: FileText },
-        { title: "Assessments", href: "/admin/assessments", icon: ClipboardList, badge: "New" },
+        { title: "Work Verification", href: "/admin/assessments", icon: ClipboardList, badge: "New" },
         { title: "Fraud Detection", href: "/admin/fraud", icon: ShieldCheck },
         { title: "Task Management", href: "/admin/tasks", icon: Briefcase },
         { title: "Users", href: "/admin/users", icon: Users },
@@ -96,11 +96,11 @@ export const DashboardSidebar = React.forwardRef<
     : [
         { title: "Dashboard", href: "/dashboard", icon: Home },
         { title: "Profile", href: "/dashboard/profile/view", icon: UserCircle },
-        { title: "Edit Profile", href: "/dashboard/profile", icon: Edit },
+        { title: "Edit Profile", href: "/dashboard/profile/view?edit=1", icon: Edit },
         { title: "AI Assist", href: "/dashboard/profile/ai-assist", icon: Wand2, badge: "New" },
         { title: "Verification", href: "/dashboard/verification", icon: ShieldCheck },
         { title: "Tasks", href: "/dashboard/tasks", icon: CheckSquare },
-        { title: "Applications", href: "/dashboard/tasks", icon: FileText },
+        { title: "Opportunities", href: "/dashboard/tasks", icon: FileText },
         { title: "Messages", href: "/dashboard/notifications", icon: MessageSquare },
         { title: "Notifications", href: "/dashboard/notifications", icon: Bell },
         { title: "Settings", href: "/dashboard/settings", icon: Settings },

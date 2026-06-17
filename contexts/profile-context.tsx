@@ -3,11 +3,21 @@
 import type React from "react"
 import { createContext, useState, useEffect, useContext, useCallback, useMemo } from "react"
 import { prozApi } from "@/lib/api"
+import { normalizeMediaUrl } from "@/lib/utils"
 import { useAuth } from "./auth-context"
 import type { ProzProfileCreate, ProzProfileResponse, ProzProfileUpdate } from "@/types/api"
 
 // Use the actual API response type for consistency
 type Profile = ProzProfileResponse
+
+function normalizeProfileMedia(profile: Profile): Profile {
+  if (!profile.profile_image_url) return profile
+  return {
+    ...profile,
+    profile_image_url:
+      normalizeMediaUrl(profile.profile_image_url) ?? profile.profile_image_url,
+  }
+}
 
 interface ProfileContextProps {
   profile: Profile | null
@@ -46,7 +56,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setIsLoading(true)
     try {
       const profileData = await prozApi.getOwnProfile(token)
-      setProfile(profileData)
+      setProfile(profileData ? normalizeProfileMedia(profileData) : null)
       setError(null)
     } catch (error) {
       console.error("Failed to fetch profile:", error)
@@ -75,7 +85,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setIsLoading(true)
     try {
       const newProfile = await prozApi.registerProfile(profileData, token)
-      setProfile(newProfile)
+      setProfile(normalizeProfileMedia(newProfile))
       setError(null)
       return newProfile
     } catch (error) {
@@ -105,7 +115,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setIsLoading(true)
     try {
       const updatedProfile = await prozApi.updateProfile(profileData, token)
-      setProfile(updatedProfile)
+      setProfile(normalizeProfileMedia(updatedProfile))
       setError(null)
       return updatedProfile
     } catch (error) {
@@ -132,8 +142,9 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const existing = await prozApi.getOwnProfile(token)
     if (existing) {
-      setProfile(existing)
-      return existing
+      const normalized = normalizeProfileMedia(existing)
+      setProfile(normalized)
+      return normalized
     }
 
     try {
@@ -153,8 +164,8 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const message = error instanceof Error ? error.message : String(error)
       if (message.includes("already exists")) {
         const refetched = await prozApi.getOwnProfile(token)
-        if (refetched) setProfile(refetched)
-        return refetched
+        if (refetched) setProfile(normalizeProfileMedia(refetched))
+        return refetched ? normalizeProfileMedia(refetched) : refetched
       }
       throw error
     }

@@ -37,7 +37,7 @@ import {
   dashboardPageSubtitleClass,
   dashboardPageTitleClass,
 } from "@/lib/dashboard-styles"
-import { cn } from "@/lib/utils"
+import { cn, normalizeMediaUrl } from "@/lib/utils"
 
 const EVIDENCE_TYPES: {
   id: VerificationEvidenceType
@@ -48,7 +48,7 @@ const EVIDENCE_TYPES: {
 }[] = [
   { id: "github", label: "GitHub", icon: Github, hint: "Public repos prove real engineering work", section: "identity" },
   { id: "linkedin", label: "LinkedIn", icon: Linkedin, hint: "Professional history cross-check", section: "identity" },
-  { id: "identity_document", label: "ID Document", icon: ShieldCheck, hint: "Government ID or passport verification link", section: "identity" },
+  { id: "identity_document", label: "ID Document", icon: ShieldCheck, hint: "Upload a government ID or passport (PDF, JPG, or PNG). Only admins can view it during review.", section: "identity" },
   { id: "previous_employer", label: "Past Employer", icon: Briefcase, hint: "Company + role you can verify", section: "work" },
   { id: "work_sample", label: "Work Sample", icon: Briefcase, hint: "Case study, demo, or live project URL", section: "work" },
   { id: "portfolio", label: "Portfolio", icon: Globe, hint: "Personal site or Behance/Dribbble", section: "skills" },
@@ -72,6 +72,132 @@ function RequirementRow({ met, label }: { met: boolean; label: string }) {
   )
 }
 
+type GitHubValidationResult = Awaited<ReturnType<typeof verificationApi.validateGitHub>>
+
+function normalizeGitHubUrl(value: string): string {
+  const trimmed = value.trim()
+  if (!trimmed) return ""
+  if (/^https?:\/\//i.test(trimmed)) return trimmed.replace(/\/+$/, "")
+  if (trimmed.startsWith("github.com/")) return `https://${trimmed.replace(/\/+$/, "")}`
+  if (!trimmed.includes("/") && /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/.test(trimmed)) {
+    return `https://github.com/${trimmed}`
+  }
+  return trimmed
+}
+
+function formatGitHubMemberSince(value?: string): string | null {
+  if (!value) return null
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return null
+  return date.toLocaleDateString(undefined, { month: "short", year: "numeric" })
+}
+
+function resolveEvidenceTitle(
+  rawTitle: string,
+  activeType: VerificationEvidenceType,
+  githubResult?: GitHubValidationResult | null
+): string {
+  const trimmed = rawTitle.trim()
+  if (trimmed.length >= 2) return trimmed
+
+  if (activeType === "github" && githubResult?.username) {
+    return `GitHub — ${githubResult.username}`
+  }
+
+  const label = EVIDENCE_TYPES.find((t) => t.id === activeType)?.label
+  return label ? `${label} verification` : "Verification evidence"
+}
+
+function evidenceUrlPlaceholder(type: VerificationEvidenceType): string {
+  switch (type) {
+    case "github":
+      return "https://github.com/your-username"
+    case "linkedin":
+      return "https://linkedin.com/in/your-profile"
+    case "portfolio":
+      return "https://yourportfolio.com"
+    case "work_sample":
+      return "https://link-to-your-project-or-demo.com"
+    case "certification":
+      return "https://credly.com/badges/... or issuer link"
+    default:
+      return "https://"
+  }
+}
+
+function GitHubPreviewCard({ result }: { result: GitHubValidationResult }) {
+  if (!result.valid || !result.username) return null
+
+  const memberSince = formatGitHubMemberSince(result.account_created_at)
+
+  return (
+    <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">
+      <div className="flex items-start gap-3">
+        {result.avatar_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={result.avatar_url}
+            alt=""
+            className="h-12 w-12 rounded-full border border-white shadow-sm"
+          />
+        ) : (
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 text-white">
+            <Github className="h-5 w-5" />
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="text-[14px] font-semibold text-slate-900">{result.name || result.username}</p>
+          <p className="text-[12px] text-slate-600">@{result.username}</p>
+          <p className="mt-1 text-[12px] text-emerald-700">
+            {result.public_repos ?? 0} public {result.public_repos === 1 ? "repository" : "repositories"}
+            {memberSince ? ` · member since ${memberSince}` : ""}
+          </p>
+          {result.bio && (
+            <p className="mt-2 text-[12px] leading-relaxed text-slate-600">{result.bio}</p>
+          )}
+        </div>
+      </div>
+
+      {result.top_repos && result.top_repos.length > 0 && (
+        <div className="mt-3 border-t border-emerald-100 pt-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Recent public work</p>
+          <ul className="mt-2 space-y-2">
+            {result.top_repos.map((repo) => (
+              <li key={repo.name} className="rounded-lg bg-white/80 px-3 py-2">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  {repo.url ? (
+                    <a
+                      href={repo.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[13px] font-semibold text-brand hover:underline"
+                    >
+                      {repo.name}
+                    </a>
+                  ) : (
+                    <span className="text-[13px] font-semibold text-slate-900">{repo.name}</span>
+                  )}
+                  {repo.language && (
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
+                      {repo.language}
+                    </span>
+                  )}
+                  {typeof repo.stars === "number" && repo.stars > 0 && (
+                    <span className="text-[11px] text-slate-500">{repo.stars} stars</span>
+                  )}
+                </div>
+                {repo.description && (
+                  <p className="mt-1 text-[11px] leading-relaxed text-slate-500">{repo.description}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function SkillsVerificationPage() {
   const { token } = useAuth()
   const { ensureMinimalProfile } = useProfile()
@@ -87,7 +213,10 @@ export default function SkillsVerificationPage() {
   const [referrerEmail, setReferrerEmail] = useState("")
   const [referrerRelationship, setReferrerRelationship] = useState("")
   const [referrerMessage, setReferrerMessage] = useState("")
-  const [githubPreview, setGithubPreview] = useState<string | null>(null)
+  const [githubResult, setGithubResult] = useState<GitHubValidationResult | null>(null)
+  const [githubChecking, setGithubChecking] = useState(false)
+  const [identityDocFile, setIdentityDocFile] = useState<File | null>(null)
+  const [identityDocLabel, setIdentityDocLabel] = useState<string | null>(null)
 
   const loadStatus = useCallback(async () => {
     if (!token) return
@@ -125,41 +254,144 @@ export default function SkillsVerificationPage() {
     setReferrerEmail("")
     setReferrerRelationship("")
     setReferrerMessage("")
-    setGithubPreview(null)
+    setGithubResult(null)
+    setIdentityDocFile(null)
+    setIdentityDocLabel(null)
   }
 
   const handleValidateGitHub = async () => {
-    if (!token || !url) return
+    if (!token || !url.trim()) {
+      toast({ title: "Enter your GitHub profile URL", variant: "destructive" })
+      return
+    }
+
+    const normalizedUrl = normalizeGitHubUrl(url)
+    setUrl(normalizedUrl)
+    setGithubChecking(true)
+    setGithubResult(null)
+
     try {
-      const result = await verificationApi.validateGitHub(token, url)
+      const result = await verificationApi.validateGitHub(token, normalizedUrl)
+      setGithubResult(result)
       if (result.valid) {
-        setGithubPreview(
-          `@${result.username} · ${result.public_repos ?? 0} repos · ${result.followers ?? 0} followers`
-        )
-        if (!title) setTitle(`GitHub — ${result.username}`)
-        toast({ title: "GitHub verified", description: result.message })
+        if (title.trim().length < 2) setTitle(`GitHub — ${result.username}`)
+        toast({ title: "GitHub profile linked", description: result.message })
       } else {
-        toast({ title: "Invalid GitHub", description: result.message, variant: "destructive" })
+        toast({ title: "Could not verify GitHub", description: result.message, variant: "destructive" })
       }
     } catch (error) {
       toast({
-        title: "Validation failed",
+        title: "Verification failed",
         description: error instanceof Error ? error.message : "Try again",
         variant: "destructive",
       })
+    } finally {
+      setGithubChecking(false)
     }
   }
 
   const handleAddEvidence = async () => {
     if (!token) return
+
+    if (activeType === "github") {
+      const normalizedUrl = normalizeGitHubUrl(url)
+      if (!normalizedUrl) {
+        toast({ title: "Enter your GitHub profile URL", variant: "destructive" })
+        return
+      }
+      if (!githubResult?.valid) {
+        toast({
+          title: "Verify GitHub first",
+          description: "Link your public GitHub profile and verify it before adding this evidence.",
+          variant: "destructive",
+        })
+        return
+      }
+      const verifiedUsername = githubResult.username?.toLowerCase()
+      const inputUsername = normalizeGitHubUrl(url).match(/github\.com\/([^/?#]+)/i)?.[1]?.toLowerCase()
+      if (verifiedUsername && inputUsername && verifiedUsername !== inputUsername) {
+        toast({
+          title: "GitHub URL changed",
+          description: "Verify the updated GitHub profile URL before adding evidence.",
+          variant: "destructive",
+        })
+        return
+      }
+    }
+
+    if (activeType === "linkedin") {
+      const trimmedUrl = url.trim()
+      if (!/^https?:\/\/(www\.)?linkedin\.com\/in\//i.test(trimmedUrl)) {
+        toast({ title: "Enter a valid LinkedIn profile URL", variant: "destructive" })
+        return
+      }
+    }
+
+    if (["portfolio", "work_sample", "certification"].includes(activeType)) {
+      const trimmedUrl = url.trim()
+      if (!trimmedUrl.startsWith("http://") && !trimmedUrl.startsWith("https://")) {
+        toast({ title: "Enter a valid https link", variant: "destructive" })
+        return
+      }
+    }
+
+    if (activeType === "identity_document") {
+      if (!identityDocFile && !url.trim()) {
+        toast({
+          title: "ID document required",
+          description: "Upload your government ID or passport before adding this evidence.",
+          variant: "destructive",
+        })
+        return
+      }
+      if (description.trim().length < 3) {
+        toast({
+          title: "Document type required",
+          description: "Tell us what you uploaded (e.g. Passport, National ID, Driver's license).",
+          variant: "destructive",
+        })
+        return
+      }
+    }
+
+    if (activeType === "previous_employer" && description.trim().length < 10) {
+      toast({
+        title: "Employer details required",
+        description: "Describe the company, your role, and what you delivered.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (activeType === "recommendation") {
+      if (!referrerName.trim() || !referrerEmail.trim()) {
+        toast({ title: "Referrer details required", variant: "destructive" })
+        return
+      }
+      if (referrerMessage.trim().length < 20) {
+        toast({ title: "Recommendation message too short", description: "Use at least 20 characters.", variant: "destructive" })
+        return
+      }
+    }
+
     setSubmitting(true)
     try {
+      let evidenceUrl = url.trim()
+      if (activeType === "identity_document" && identityDocFile) {
+        const upload = await verificationApi.uploadIdentityDocument(token, identityDocFile)
+        evidenceUrl = upload.file_url || ""
+        if (!evidenceUrl) {
+          throw new Error("Upload succeeded but no file URL was returned")
+        }
+      }
+
+      const resolvedTitle = resolveEvidenceTitle(title, activeType, githubResult)
       const payload: Record<string, unknown> = {
         type: activeType,
-        title: title || EVIDENCE_TYPES.find((t) => t.id === activeType)?.label || "Evidence",
+        title: resolvedTitle,
       }
-      if (url) payload.url = url
-      if (description) payload.description = description
+      if (evidenceUrl) payload.url = activeType === "github" ? normalizeGitHubUrl(evidenceUrl) : evidenceUrl
+      if (description.trim()) payload.description = description.trim()
       if (activeType === "recommendation") {
         payload.referrer_name = referrerName
         payload.referrer_email = referrerEmail
@@ -318,7 +550,7 @@ export default function SkillsVerificationPage() {
             <TabsList className="mb-3 grid w-full grid-cols-3 bg-slate-100 p-1">
               <TabsTrigger value="identity" className="text-[12px]">Identity</TabsTrigger>
               <TabsTrigger value="work" className="text-[12px]">Work Experience</TabsTrigger>
-              <TabsTrigger value="skills" className="text-[12px]">Skills Assessment</TabsTrigger>
+              <TabsTrigger value="skills" className="text-[12px]">Work Verification</TabsTrigger>
             </TabsList>
           </Tabs>
 
@@ -339,31 +571,86 @@ export default function SkillsVerificationPage() {
                   <Input
                     className={dashboardInputClass}
                     placeholder={`e.g. ${t.label} proof`}
+                    minLength={2}
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                   />
+                  <p className="mt-1 text-[11px] text-slate-500">At least 2 characters. Leave blank to use a default title.</p>
                 </div>
 
-                {t.id !== "recommendation" && t.id !== "previous_employer" && (
+                {t.id !== "recommendation" && t.id !== "previous_employer" && t.id !== "identity_document" && (
                   <div>
                     <Label>URL</Label>
                     <Input
                       className={dashboardInputClass}
-                      placeholder="https://"
+                      placeholder={evidenceUrlPlaceholder(t.id)}
                       value={url}
-                      onChange={(e) => setUrl(e.target.value)}
+                      onChange={(e) => {
+                        setUrl(e.target.value)
+                        if (t.id === "github") setGithubResult(null)
+                      }}
                     />
                     {t.id === "github" && (
-                      <div className="mt-2 flex items-center gap-2">
-                        <Button type="button" variant="outline" size="sm" onClick={handleValidateGitHub}>
-                          Validate GitHub
-                        </Button>
-                        {githubPreview && (
-                          <span className="text-[12px] text-emerald-600">{githubPreview}</span>
-                        )}
+                      <div className="mt-2 space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={githubChecking || !url.trim()}
+                            onClick={handleValidateGitHub}
+                          >
+                            {githubChecking ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Github className="mr-2 h-4 w-4" />
+                            )}
+                            Verify GitHub profile
+                          </Button>
+                          <span className="text-[11px] text-slate-500">
+                            We check public repositories — not follower counts.
+                          </span>
+                        </div>
+                        {githubResult && <GitHubPreviewCard result={githubResult} />}
                       </div>
                     )}
                   </div>
+                )}
+
+                {t.id === "identity_document" && (
+                  <>
+                    <div>
+                      <Label>Upload document</Label>
+                      <Input
+                        className={dashboardInputClass}
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] ?? null
+                          setIdentityDocFile(file)
+                          setIdentityDocLabel(file?.name ?? null)
+                          setUrl("")
+                        }}
+                      />
+                      <p className="mt-1 text-[11px] text-slate-500">
+                        PDF, JPG, or PNG up to 5MB. Your document is only visible to Prozlab admins during review.
+                      </p>
+                      {identityDocLabel && (
+                        <p className="mt-2 text-[12px] font-medium text-emerald-700">
+                          Ready to upload: {identityDocLabel}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <Label>Document type</Label>
+                      <Input
+                        className={dashboardInputClass}
+                        placeholder="e.g. Passport, National ID, Driver's license"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                      />
+                    </div>
+                  </>
                 )}
 
                 {(t.id === "work_sample" || t.id === "certification" || t.id === "previous_employer") && (
@@ -475,14 +762,40 @@ export default function SkillsVerificationPage() {
                       <p className="mt-1 text-[12px] text-amber-700">Note: {item.admin_notes}</p>
                     )}
                     {item.url && (
-                      <a href={item.url} target="_blank" rel="noreferrer" className="mt-1 block text-[13px] text-brand hover:underline">
-                        {item.url}
-                      </a>
+                      item.type === "identity_document" ? (
+                        <p className="mt-1 text-[13px] text-emerald-700">Secure identity document uploaded for admin review</p>
+                      ) : (
+                        <a
+                          href={normalizeMediaUrl(item.url) || item.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-1 block text-[13px] text-brand hover:underline"
+                        >
+                          {item.url}
+                        </a>
+                      )
                     )}
                     {item.metadata?.username && (
-                      <p className="mt-1 text-[12px] text-slate-500">
-                        GitHub: @{String(item.metadata.username)} · {String(item.metadata.public_repos ?? 0)} repos
-                      </p>
+                      <div className="mt-2 text-[12px] text-slate-500">
+                        <p>
+                          GitHub @{String(item.metadata.username)}
+                          {item.metadata.public_repos != null
+                            ? ` · ${String(item.metadata.public_repos)} public repos`
+                            : ""}
+                          {item.metadata.account_created_at
+                            ? ` · since ${formatGitHubMemberSince(String(item.metadata.account_created_at))}`
+                            : ""}
+                        </p>
+                        {Array.isArray(item.metadata.top_repos) && item.metadata.top_repos.length > 0 && (
+                          <p className="mt-1">
+                            Work shown:{" "}
+                            {(item.metadata.top_repos as Array<{ name?: string }>)
+                              .map((repo) => repo.name)
+                              .filter(Boolean)
+                              .join(", ")}
+                          </p>
+                        )}
+                      </div>
                     )}
                     {item.referrer_name && (
                       <p className="mt-1 text-[12px] text-slate-500">

@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 import { Play, Pause, RotateCcw, Zap } from "lucide-react"
-import { prozProfilesApi, API_BASE_URL } from "@/lib/api"
+import { prozProfilesApi } from "@/lib/api"
+import { getProfileImageUrl } from "@/lib/utils"
 
 type ProfessionalProfile = {
   id: string
@@ -60,15 +61,8 @@ export function ProfessionalRadar() {
     }
   }, [professionals, isScanning, scanSpeed])
 
-  const getProfileImageUrl = (profile: ProfessionalProfile): string => {
-    if (!profile.profile_image_url) {
-      return "/placeholder.svg?height=160&width=160"
-    }
-    if (profile.profile_image_url.startsWith("http")) {
-      return profile.profile_image_url
-    }
-    const base = API_BASE_URL
-    return `${base}${profile.profile_image_url.startsWith("/") ? "" : "/"}${profile.profile_image_url}`
+  const getProfileImageUrlForCard = (profile: ProfessionalProfile): string => {
+    return getProfileImageUrl(profile.profile_image_url, "/placeholder.svg?height=160&width=160")
   }
 
   const fetchProfessionals = useCallback(async () => {
@@ -190,7 +184,7 @@ export function ProfessionalRadar() {
         <div className="absolute inset-16 rounded-full bg-white dark:bg-gray-900 shadow-2xl border-4 border-blue-500 overflow-hidden transition-all duration-500">
           {currentPro.profile_image_url ? (
             <Image 
-              src={getProfileImageUrl(currentPro) || "/placeholder.svg"} 
+              src={getProfileImageUrlForCard(currentPro)} 
               alt={`${currentPro.first_name} ${currentPro.last_name}`} 
               width={160} 
               height={160} 

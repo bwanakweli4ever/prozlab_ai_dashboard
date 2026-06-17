@@ -34,7 +34,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts"
-import { cn } from "@/lib/utils"
+import { cn, getProfileImageUrl } from "@/lib/utils"
 
 export interface DashboardProfile {
   id: string
@@ -147,7 +147,7 @@ export function AdminDashboardHome({
       icon: Briefcase,
     },
     {
-      label: "Pending Assessments",
+      label: "Pending Work Reviews",
       value: stats.pendingSkillReviews,
       delta: `${stats.verifiedSkills} approved`,
       icon: ClipboardList,
@@ -282,7 +282,7 @@ export function AdminDashboardHome({
             {[
               { label: "Avg. Verification Time", value: "2.4 min" },
               { label: "Approval Rate", value: `${stats.approvalRate}%` },
-              { label: "Active Assessments", value: String(stats.pendingSkillReviews + stats.verifiedSkills) },
+              { label: "Active Verifications", value: String(stats.pendingSkillReviews + stats.verifiedSkills) },
               { label: "Fraud Alerts", value: String(stats.fraudAlerts) },
             ].map((row) => (
               <div key={row.label} className="flex items-center justify-between border-b border-slate-100 pb-2 last:border-0">
@@ -377,7 +377,7 @@ export function AdminDashboardHome({
                     <td className="py-3">
                       <div className="flex items-center gap-2.5">
                         <Avatar className="h-9 w-9">
-                          <AvatarImage src={p.profile_image_url} />
+                          <AvatarImage src={getProfileImageUrl(p.profile_image_url)} />
                           <AvatarFallback className="text-[11px]">{p.first_name?.[0]}{p.last_name?.[0]}</AvatarFallback>
                         </Avatar>
                         <div>
@@ -440,7 +440,7 @@ export function AdminDashboardHome({
               {[
                 { label: "Review Verifications", href: "/admin/verifications", icon: CheckCircle2, color: "bg-brand/10 text-brand" },
                 { label: "Manage Users", href: "/admin/users", icon: Users, color: "bg-emerald-50 text-emerald-600" },
-                { label: "Assessments", href: "/admin/assessments", icon: ClipboardList, color: "bg-violet-50 text-violet-600" },
+                { label: "Work Verification", href: "/admin/assessments", icon: ClipboardList, color: "bg-violet-50 text-violet-600" },
                 { label: "Fraud Detection", href: "/admin/fraud", icon: ShieldCheck, color: "bg-amber-50 text-amber-600" },
               ].map((a) => (
                 <Link

@@ -90,7 +90,7 @@ export default function RequestServiceSuccessPage() {
                   <div>
                     <p className="font-medium text-gray-900">Request Review</p>
                     <p className="text-sm text-gray-600">
-                      Our team will review your request and match you with qualified professionals.
+                      Our team will review your request and match you with work-verified professionals.
                     </p>
                   </div>
                 </div>

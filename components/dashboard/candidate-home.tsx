@@ -27,7 +27,7 @@ const ONBOARDING_STEPS = [
   { id: "personal", label: "Personal Info", icon: Target },
   { id: "expertise", label: "Expertise", icon: Star },
   { id: "portfolio", label: "Work Samples", icon: FolderOpen },
-  { id: "assessment", label: "Assessment", icon: ShieldCheck },
+  { id: "assessment", label: "Work Verification", icon: ShieldCheck },
   { id: "complete", label: "Complete", icon: Check },
 ] as const
 
@@ -123,7 +123,7 @@ export function CandidateHome() {
   const continueAction = () => {
     if (currentStep <= 1) router.push("/register")
     else if (currentStep === 2) router.push("/register")
-    else if (currentStep === 3) router.push("/dashboard/profile")
+    else if (currentStep === 3) router.push("/dashboard/profile/view?edit=1")
     else if (currentStep === 4) router.push("/dashboard/verification")
     else router.push("/dashboard/profile/view")
   }
@@ -143,7 +143,7 @@ export function CandidateHome() {
       : currentStep === 3
         ? "Showcase your best projects to stand out to employers."
         : currentStep === 4
-          ? "Take a quick assessment to earn your verified badge."
+          ? "Submit real-world evidence to earn your work-verified badge."
           : "Complete the remaining details on your profile."
 
   const quickActions = [
@@ -151,11 +151,11 @@ export function CandidateHome() {
       title: "Upload Work Sample",
       desc: "Add portfolio items",
       icon: Upload,
-      href: "/dashboard/profile",
+      href: "/dashboard/profile/view?edit=1",
     },
     {
-      title: "AI Complete Profile",
-      desc: "Upload resume & auto-fill",
+      title: "AI Profile Assist",
+      desc: "Import & enrich your profile",
       icon: Sparkles,
       href: "/dashboard/profile/ai-assist",
     },
@@ -166,8 +166,8 @@ export function CandidateHome() {
       href: "/dashboard/verification",
     },
     {
-      title: "Browse Jobs",
-      desc: "View matched roles",
+      title: "View Opportunities",
+      desc: "Roles matched to your proven skills",
       icon: Briefcase,
       href: "/dashboard/tasks",
     },
@@ -181,9 +181,9 @@ export function CandidateHome() {
 
   const stats = [
     { label: "Profile views", value: profile?.profile_views ?? 24, icon: "👁" },
-    { label: "Job matches", value: 12, icon: "✨" },
-    { label: "Applications", value: 6, icon: "📋" },
-    { label: "Assessments", value: 1, icon: "🛡" },
+    { label: "Role matches", value: 12, icon: "✨" },
+    { label: "Engagements", value: 6, icon: "📋" },
+    { label: "Work verified", value: 1, icon: "🛡" },
   ]
 
   return (
@@ -195,7 +195,7 @@ export function CandidateHome() {
             Welcome back, {firstName}! 👋
           </h1>
           <p className="mt-1 text-[14px] text-slate-500">
-            Let&apos;s finish setting up your profile and start getting matched with amazing opportunities.
+            Build your work-verified profile and get matched to roles where your proven skills predict success.
           </p>
         </div>
 
@@ -277,9 +277,9 @@ export function CandidateHome() {
               <Sparkles className="h-5 w-5 text-brand" />
             </div>
             <div>
-              <h3 className="text-[15px] font-semibold text-slate-900">Use AI to complete your profile</h3>
+              <h3 className="text-[15px] font-semibold text-slate-900">Use AI to build your work-verified profile</h3>
               <p className="mt-0.5 text-[13px] text-slate-600">
-                Upload your resume PDF and let AI fill in your bio, skills, experience, and more.
+                Import your background and let AI help highlight your skills, projects, and proven experience.
               </p>
             </div>
           </div>
@@ -352,7 +352,7 @@ export function CandidateHome() {
           </p>
           <button
             type="button"
-            onClick={() => router.push("/dashboard/profile")}
+            onClick={() => router.push("/dashboard/profile/view?edit=1")}
             className="mt-3 text-[12px] font-semibold text-brand hover:text-brand-dark"
           >
             Improve now →

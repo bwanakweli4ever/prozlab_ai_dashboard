@@ -31,7 +31,7 @@ import { ProzLabLogo } from "@/components/prozlab-logo"
 
 const navLinks = [
   { label: "For Employers", href: "#employers" },
-  { label: "For Candidates", href: "#candidates" },
+  { label: "For Professionals", href: "#candidates" },
   { label: "How It Works", href: "#how-it-works" },
   { label: "Why Prozlab", href: "#why-prozlab" },
   { label: "Resources", href: "#resources" },
@@ -67,20 +67,6 @@ function SuccessGauge() {
         <div className="text-2xl font-bold text-brand">96%</div>
       </div>
     </div>
-  )
-}
-
-function CompanyLogo({ name }: { name: string }) {
-  const styles: Record<string, string> = {
-    Deel: "font-bold tracking-tight",
-    Ramp: "font-semibold lowercase",
-    Brex: "font-bold uppercase tracking-widest",
-    Notion: "font-medium",
-    Twilio: "font-bold lowercase italic",
-    Samsara: "font-semibold tracking-wide",
-  }
-  return (
-    <span className={`text-[22px] text-slate-400 ${styles[name] || "font-semibold"}`}>{name}</span>
   )
 }
 
@@ -124,7 +110,7 @@ export function HiringLandingPage() {
             <div>
               <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-brand">
                 <Sparkles className="h-3.5 w-3.5" />
-                AI-Powered Hiring. Real-World Results.
+                Talent Intelligence Platform
               </div>
               <h1 className="text-[2.75rem] font-extrabold leading-[1.08] tracking-tight text-slate-900 lg:text-[3.25rem]">
                 Skills Proven by{" "}
@@ -133,15 +119,20 @@ export function HiringLandingPage() {
                 Not Interviews.
               </h1>
               <p className="mt-5 max-w-[480px] text-[17px] leading-relaxed text-slate-600">
-                Prozlab connects employers with proven professionals — vetted through real work, not
-                resumes — so you can hire with confidence.
+                Hire proven professionals, not just qualified applicants. Prozlab uses verified work
+                history, performance signals, and intelligent matching to predict who will succeed on
+                the job—not just pass the interview.
+              </p>
+              <p className="mt-3 max-w-[480px] text-[14px] leading-relaxed text-slate-500">
+                Prozlab predicts hiring success using verified skills, real-world assessments, and
+                performance data.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Button className="h-12 rounded-lg bg-brand px-7 text-[15px] font-semibold shadow-md shadow-indigo-200 hover:bg-brand-dark" asChild>
-                  <Link href="/register">Hire Top Talent</Link>
+                  <Link href="/register">Hire Proven Professionals</Link>
                 </Button>
                 <Button variant="outline" className="h-12 rounded-lg border-slate-300 bg-white px-7 text-[15px] font-semibold text-slate-700 hover:bg-slate-50" asChild>
-                  <Link href="/register">I&apos;m a Candidate</Link>
+                  <Link href="/register">I&apos;m a Professional</Link>
                 </Button>
               </div>
               <div className="mt-9 flex items-center gap-4">
@@ -244,8 +235,8 @@ export function HiringLandingPage() {
                     {[
                       { label: "Skills Match", value: 98 },
                       { label: "Experience Match", value: 93 },
-                      { label: "Culture Fit", value: 91 },
-                      { label: "Work History Score", value: 95 },
+                      { label: "Delivery Track Record", value: 97 },
+                      { label: "Verified Work History", value: 95 },
                     ].map((item) => (
                       <div key={item.label}>
                         <div className="mb-1 flex justify-between text-[10px]">
@@ -262,20 +253,6 @@ export function HiringLandingPage() {
           </div>
         </section>
 
-        {/* ── Trusted by ── */}
-        <section className="border-y border-slate-100 bg-slate-50 py-10">
-          <div className="mx-auto max-w-[1200px] px-6 lg:px-8">
-            <p className="mb-7 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
-              Trusted by innovative companies
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-x-14 gap-y-5">
-              {["Deel", "Ramp", "Brex", "Notion", "Twilio", "Samsara"].map((name) => (
-                <CompanyLogo key={name} name={name} />
-              ))}
-            </div>
-          </div>
-        </section>
-
         {/* ── Problem ── */}
         <section id="why-prozlab" className="py-20 lg:py-24">
           <div className="mx-auto max-w-[1200px] px-6 lg:px-8">
@@ -283,7 +260,8 @@ export function HiringLandingPage() {
               The problem with traditional hiring
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-center text-[16px] text-slate-600">
-              Resumes and interviews weren&apos;t built for the way modern teams work.
+              Most platforms claim they vet talent. Employers still complain that candidates perform
+              differently on the job. Resumes and interviews weren&apos;t built for how modern teams work.
             </p>
             <div className="relative mt-16">
               <div className="landing-dashed-line absolute left-[12%] right-[12%] top-8 hidden h-0.5 lg:block" />
@@ -318,9 +296,9 @@ export function HiringLandingPage() {
             </p>
             <div className="mt-16 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
               {[
-                { n: "01", icon: ClipboardList, title: "Work-Based Evaluation", desc: "Role-specific assessments based on real deliverables and project outcomes." },
-                { n: "02", icon: ShieldCheck, title: "Verified Skills & Experience", desc: "Validated through projects, client feedback, and reference checks." },
-                { n: "03", icon: BarChart3, title: "Predictive Success Matching", desc: "AI analyzes skills, work style, and track record to find the best fit." },
+                { n: "01", icon: ClipboardList, title: "Work-Based Evaluation", desc: "Professionals are evaluated on real deliverables and project outcomes—not hypothetical scenarios." },
+                { n: "02", icon: ShieldCheck, title: "Verified Skills & Experience", desc: "Every profile is backed by verified work history, client feedback, and performance data." },
+                { n: "03", icon: BarChart3, title: "Talent Intelligence Matching", desc: "Our platform predicts hiring success by matching proven skills and track record to each role." },
                 { n: "04", icon: Sparkles, title: "Ongoing Performance Signals", desc: "Continuous tracking of delivery metrics and client satisfaction." },
               ].map(({ n, icon: Icon, title, desc }) => (
                 <div key={n} className="text-center">
@@ -338,6 +316,39 @@ export function HiringLandingPage() {
           </div>
         </section>
 
+        {/* ── For Professionals ── */}
+        <section id="candidates" className="border-y border-slate-100 bg-white py-20 lg:py-24">
+          <div className="mx-auto max-w-[1200px] px-6 lg:px-8">
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand">For Professionals</p>
+              <h2 className="mt-3 text-[2rem] font-bold tracking-tight text-slate-900 lg:text-[2.25rem]">
+                Get hired for real work—not interview performance
+              </h2>
+              <p className="mt-3 text-[16px] text-slate-600">
+                Build a work-verified profile and let your track record speak for itself. Prozlab
+                matches you to roles where your proven skills predict on-the-job success.
+              </p>
+            </div>
+            <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
+              {[
+                { title: "Show proof, not polish", desc: "Employers see verified deliverables, work history, and performance signals before they hire." },
+                { title: "Skip the interview theater", desc: "Your real-world work speaks louder than rehearsed answers or keyword-stuffed resumes." },
+                { title: "Matched to roles you'll succeed in", desc: "Talent intelligence surfaces opportunities aligned with your proven strengths." },
+              ].map((item) => (
+                <div key={item.title} className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
+                  <h3 className="text-[15px] font-semibold text-slate-900">{item.title}</h3>
+                  <p className="mt-2 text-[13px] leading-relaxed text-slate-600">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-10 text-center">
+              <Button className="h-11 rounded-lg bg-brand px-7 font-semibold hover:bg-brand-dark" asChild>
+                <Link href="/register">Build Your Work-Verified Profile</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
         {/* ── Stats (dark) ── */}
         <section id="employers" className="py-20 lg:py-24">
           <div className="mx-auto max-w-[1200px] px-6 lg:px-8">
@@ -346,14 +357,14 @@ export function HiringLandingPage() {
                 {/* Left */}
                 <div>
                   <h2 className="text-[2rem] font-bold leading-tight text-white lg:text-[2.25rem]">
-                    Better data. Better matches. Better results.
+                    Talent intelligence that predicts on-the-job success
                   </h2>
                   <p className="mt-4 text-[15px] leading-relaxed text-slate-400">
-                    Stop guessing. Start hiring based on proof.
+                    Not another job board. Hire based on verified work, performance signals, and proof.
                   </p>
                   <div className="mt-8 flex flex-wrap gap-3">
                     <Button className="h-11 rounded-lg bg-brand px-6 font-semibold hover:bg-brand-dark" asChild>
-                      <Link href="/register">Hire Top Talent</Link>
+                      <Link href="/register">Hire Proven Professionals</Link>
                     </Button>
                     <Button variant="outline" className="h-11 rounded-lg border-white/25 bg-transparent px-6 font-semibold text-white hover:bg-white/10" asChild>
                       <Link href="#contact">Book a Demo</Link>
@@ -421,10 +432,14 @@ export function HiringLandingPage() {
             <div className="grid items-center gap-10 rounded-3xl bg-slate-50 px-8 py-12 lg:grid-cols-2 lg:gap-16 lg:px-14 lg:py-14">
               <div>
                 <h2 className="text-[1.75rem] font-bold leading-tight text-slate-900 lg:text-[2rem]">
-                  Ready to build your dream team with proven professionals?
+                  Hire proven professionals—not just qualified applicants
                 </h2>
+                <p className="mt-3 text-[14px] text-slate-600">
+                  Prozlab predicts hiring success using verified skills, real-world assessments, and
+                  performance data.
+                </p>
                 <ul className="mt-6 space-y-3">
-                  {["Verified professionals", "Secure payments", "Satisfaction guaranteed"].map((item) => (
+                  {["Work-verified professionals", "Predictive success matching", "Real-world performance data"].map((item) => (
                     <li key={item} className="flex items-center gap-2.5 text-[14px] text-slate-600">
                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand/10">
                         <Check className="h-3 w-3 text-brand" strokeWidth={3} />
@@ -437,7 +452,7 @@ export function HiringLandingPage() {
               <div className="flex flex-col gap-3 sm:flex-row lg:justify-end">
                 <Button className="h-12 flex-1 rounded-lg bg-brand px-8 text-[15px] font-semibold shadow-md shadow-indigo-200 hover:bg-brand-dark lg:flex-none" asChild>
                   <Link href="/register">
-                    Hire Top Talent
+                    Hire Proven Professionals
                     <ArrowRight className="ml-1.5 h-4 w-4" />
                   </Link>
                 </Button>
@@ -456,9 +471,10 @@ export function HiringLandingPage() {
           <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-5">
             <div className="lg:col-span-2">
               <Link href="/"><ProzLabLogo size="md" /></Link>
-              <p className="mt-3 text-[14px] font-medium text-brand">Connect. Fix. Earn.</p>
+              <p className="mt-3 text-[14px] font-medium text-brand">Skills Proven by Real Work, Not Interviews</p>
               <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-slate-500">
-                AI-powered hiring based on real-world work. Build teams that actually deliver.
+                A talent intelligence platform that predicts hiring success using verified skills,
+                real-world assessments, and performance data.
               </p>
               <div className="mt-5 flex gap-3">
                 {[Linkedin, Twitter, Youtube, Instagram].map((Icon, i) => (
