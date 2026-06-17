@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { Suspense, useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -59,6 +59,20 @@ type OtpFormValues = {
 }
 
 export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+        </div>
+      }
+    >
+      <ResetPasswordPageContent />
+    </Suspense>
+  )
+}
+
+function ResetPasswordPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { isAuthenticated, isLoading: authLoading, user } = useAuth()

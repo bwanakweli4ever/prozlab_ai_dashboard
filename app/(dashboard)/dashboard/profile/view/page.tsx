@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useCallback, useMemo } from "react"
+import { Suspense, useCallback, useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Eye, Loader2, Pencil, ShieldCheck, Sparkles } from "lucide-react"
@@ -22,6 +22,20 @@ function parseSection(value: string | null): SectionId {
 }
 
 export default function ViewProfilePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-96 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-brand" />
+        </div>
+      }
+    >
+      <ViewProfilePageContent />
+    </Suspense>
+  )
+}
+
+function ViewProfilePageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { profile, isLoading, fetchProfile, ensureMinimalProfile } = useProfile()

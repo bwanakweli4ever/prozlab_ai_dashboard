@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, use } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -12,6 +12,20 @@ import { publicApi } from "@/lib/api"
 import { normalizeMediaUrl } from "@/lib/utils"
 
 export default function UserProfilePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-gray-50 text-gray-600 dark:bg-gray-900 dark:text-gray-300">
+          Loading...
+        </div>
+      }
+    >
+      <UserProfileContent />
+    </Suspense>
+  )
+}
+
+function UserProfileContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const id = searchParams.get('id')

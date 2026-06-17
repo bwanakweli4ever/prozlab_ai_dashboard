@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,6 +8,23 @@ import { CheckCircle, ArrowLeft, Copy } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
 
 export default function RequestServiceSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600" />
+            <p className="mt-2 text-gray-600">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <RequestServiceSuccessContent />
+    </Suspense>
+  )
+}
+
+function RequestServiceSuccessContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [requestId, setRequestId] = useState<string | null>(null)

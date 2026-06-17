@@ -1,10 +1,24 @@
 "use client"
 
-import { useEffect } from "react"
+import { Suspense, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2 } from "lucide-react"
 
 export default function ProfilePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex h-96 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-brand" />
+        </div>
+      }
+    >
+      <ProfilePageContent />
+    </Suspense>
+  )
+}
+
+function ProfilePageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
