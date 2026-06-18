@@ -676,9 +676,17 @@ export const publicApi = {
   },
 }
 
+export const PROFILE_IMAGE_MAX_BYTES = 5 * 1024 * 1024 // 5MB — must match backend MAX_FILE_SIZE
+
 // Profile Media API
 export const mediaApi = {
   uploadProfileImage: async (file: File, token: string): Promise<FileUploadResponse> => {
+    if (file.size > PROFILE_IMAGE_MAX_BYTES) {
+      throw new Error(
+        `Image is too large (${(file.size / (1024 * 1024)).toFixed(1)}MB). Maximum size is 5MB.`,
+      )
+    }
+
     const formData = new FormData()
     formData.append("file", file)
     
@@ -721,6 +729,11 @@ export const mediaApi = {
           return handleResponse<FileUploadResponse>(response)
         } else {
           console.log(`Endpoint ${url} failed with status:`, response.status)
+          if (response.status === 413) {
+            throw new Error(
+              "Image upload rejected: file too large for the server (max 5MB). Try a smaller image or contact support.",
+            )
+          }
           if (i === endpoints.length - 1) {
             // Last endpoint failed, show error
             const errorText = await response.text()
