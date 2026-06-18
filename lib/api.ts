@@ -861,12 +861,46 @@ export const prozApi = {
   },
 
   getSpecialties: async (): Promise<string[]> => {
+    const buildFallback = async () => {
+      const { SPECIALTIES } = await import("@/lib/constants")
+      return [...SPECIALTIES]
+    }
+
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/proz/specialties`)
+      const isBrowser = typeof window !== "undefined"
+      let response: Response | null = null
+
+      if (isBrowser) {
+        try {
+          response = await fetch("/api/proz/specialties", { cache: "no-store" })
+          if (!response.ok) {
+            console.warn("Specialties proxy returned non-OK status:", response.status)
+            response = null
+          }
+        } catch (proxyError) {
+          console.warn("Specialties proxy fetch failed, trying direct API:", proxyError)
+          response = null
+        }
+      }
+
+      if (!response) {
+        try {
+          response = await fetch(`${API_BASE_URL}/api/v1/proz/specialties`, { cache: "no-store" })
+        } catch (directError) {
+          console.warn("Direct specialties fetch failed, using fallback list:", directError)
+          return buildFallback()
+        }
+      }
+
+      if (!response.ok) {
+        console.warn("Specialties API returned non-OK status, using fallback list:", response.status)
+        return buildFallback()
+      }
+
       return handleResponse<string[]>(response)
     } catch (networkError) {
       console.error("Network error while fetching specialties:", networkError)
-      throw new Error("Network error: Could not connect to the API.")
+      return buildFallback()
     }
   },
 
