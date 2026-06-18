@@ -689,67 +689,37 @@ export const mediaApi = {
 
     const formData = new FormData()
     formData.append("file", file)
-    
-    // List of potential endpoints to try
-    const endpoints = [
-      `${API_BASE_URL}/api/v1/proz/media/upload-profile-image`,
-      `${API_BASE_URL}/api/v1/media/upload-profile-image`,
-      `${API_BASE_URL}/api/v1/proz/upload-profile-image`,
-      `${API_BASE_URL}/api/v1/upload-profile-image`,
-      `${API_BASE_URL}/upload-profile-image`
-    ]
-    
-    console.log("API_BASE_URL:", API_BASE_URL)
-    console.log("File details:", {
-      name: file.name,
-      type: file.type,
-      size: file.size
-    })
 
-    // Try each endpoint until one works
-    for (let i = 0; i < endpoints.length; i++) {
-      const url = endpoints[i]
-      console.log(`Trying endpoint ${i + 1}/${endpoints.length}:`, url)
-      
-      try {
-        const response = await fetch(url, {
-          method: "POST",
-          headers: {
-            accept: "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        })
-        
-        console.log("Response status:", response.status)
-        console.log("Response URL:", response.url)
-        
-        if (response.ok) {
-          console.log("Upload successful with endpoint:", url)
-          return handleResponse<FileUploadResponse>(response)
-        } else {
-          console.log(`Endpoint ${url} failed with status:`, response.status)
-          if (response.status === 413) {
-            throw new Error(
-              "Image upload rejected: file too large for the server (max 5MB). Try a smaller image or contact support.",
-            )
-          }
-          if (i === endpoints.length - 1) {
-            // Last endpoint failed, show error
-            const errorText = await response.text()
-            console.error("All endpoints failed. Last error:", errorText)
-            throw new Error(`Upload failed with status ${response.status}: ${errorText}`)
-          }
-        }
-      } catch (error) {
-        console.error(`Error with endpoint ${url}:`, error)
-        if (i === endpoints.length - 1) {
-          throw new Error("Network error: Could not connect to any upload endpoint.")
-        }
+    const url = `${API_BASE_URL}/api/v1/proz/media/upload-profile-image`
+
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      })
+
+      if (response.status === 413) {
+        throw new Error(
+          "Image upload rejected: file too large for the server (max 5MB). Try a smaller image.",
+        )
       }
+
+      if (!response.ok) {
+        const errorText = await response.text()
+        throw new Error(`Upload failed with status ${response.status}: ${errorText}`)
+      }
+
+      return handleResponse<FileUploadResponse>(response)
+    } catch (error) {
+      if (error instanceof Error) {
+        throw error
+      }
+      throw new Error("Network error: Could not upload profile image.")
     }
-    
-    throw new Error("No upload endpoints available")
   },
 
   deleteProfileImage: async (token: string): Promise<ProfileImageResponse> => {
