@@ -1369,6 +1369,14 @@ export const adminApi = {
       throw new Error(text || `Delete failed (${response.status})`)
     }
   },
+
+  seedSpecialties: async (token: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/proz/specialties/seed`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    return handleResponse<{ created: number; updated: number; total_defined: number; total_in_db: number }>(response)
+  },
 }
 
 export const fraudApi = {

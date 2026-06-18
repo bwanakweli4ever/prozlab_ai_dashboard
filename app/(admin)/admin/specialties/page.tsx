@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { Loader2, Pencil, Plus, Search, Trash2 } from "lucide-react"
+import { Loader2, Pencil, Plus, RefreshCw, Search, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/auth-context"
-import { adminApi } from "@/lib/api"
+import { adminApi, prozApi } from "@/lib/api"
 import type { SpecialtyAdmin } from "@/types/api"
 
 export default function AdminSpecialtiesPage() {
@@ -25,25 +25,47 @@ export default function AdminSpecialtiesPage() {
   const { toast } = useToast()
   const [loading, setLoading] = useState(true)
   const [specialties, setSpecialties] = useState<SpecialtyAdmin[]>([])
+  const [readOnly, setReadOnly] = useState(false)
   const [search, setSearch] = useState("")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<SpecialtyAdmin | null>(null)
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
   const [saving, setSaving] = useState(false)
+  const [seeding, setSeeding] = useState(false)
 
   const load = useCallback(async () => {
     if (!token) return
     setLoading(true)
+    setReadOnly(false)
     try {
       const rows = await adminApi.getSpecialtiesAdmin(token)
       setSpecialties(rows)
     } catch (error) {
-      toast({
-        title: "Failed to load skills",
-        description: error instanceof Error ? error.message : "Try again",
-        variant: "destructive",
-      })
+      // Admin CRUD API missing or auth issue — show live public list so admin sees what onboarding uses
+      try {
+        const names = await prozApi.getSpecialties()
+        setSpecialties(
+          names.map((skillName) => ({
+            id: skillName,
+            name: skillName,
+            description: null,
+            profiles_count: 0,
+          })),
+        )
+        setReadOnly(true)
+        toast({
+          title: "Read-only view",
+          description:
+            "Showing skills from the live database. Restart the API after deploy to enable add/edit/delete.",
+        })
+      } catch {
+        toast({
+          title: "Failed to load skills",
+          description: error instanceof Error ? error.message : "Try again",
+          variant: "destructive",
+        })
+      }
     } finally {
       setLoading(false)
     }
@@ -54,6 +76,14 @@ export default function AdminSpecialtiesPage() {
   }, [load])
 
   const openCreate = () => {
+    if (readOnly) {
+      toast({
+        title: "Restart API required",
+        description: "Deploy the latest backend and restart the API to manage skills.",
+        variant: "destructive",
+      })
+      return
+    }
     setEditing(null)
     setName("")
     setDescription("")
@@ -61,6 +91,7 @@ export default function AdminSpecialtiesPage() {
   }
 
   const openEdit = (row: SpecialtyAdmin) => {
+    if (readOnly) return
     setEditing(row)
     setName(row.name)
     setDescription(row.description || "")
@@ -68,7 +99,7 @@ export default function AdminSpecialtiesPage() {
   }
 
   const handleSave = async () => {
-    if (!token || !name.trim()) return
+    if (!token || !name.trim() || readOnly) return
     setSaving(true)
     try {
       if (editing) {
@@ -98,7 +129,7 @@ export default function AdminSpecialtiesPage() {
   }
 
   const handleDelete = async (row: SpecialtyAdmin) => {
-    if (!token) return
+    if (!token || readOnly) return
     if (!confirm(`Delete "${row.name}"?`)) return
     try {
       await adminApi.deleteSpecialty(token, row.id)
@@ -113,9 +144,38 @@ export default function AdminSpecialtiesPage() {
     }
   }
 
-  const filtered = specialties.filter((s) =>
-    s.name.toLowerCase().includes(search.toLowerCase()) ||
-    (s.description || "").toLowerCase().includes(search.toLowerCase()),
+  const handleSeed = async () => {
+    if (!token || readOnly) {
+      toast({
+        title: "Restart API required",
+        description: "Deploy and restart the backend, then use Seed defaults.",
+        variant: "destructive",
+      })
+      return
+    }
+    setSeeding(true)
+    try {
+      const result = await adminApi.seedSpecialties(token)
+      toast({
+        title: "Default skills synced",
+        description: `Created ${result.created}, updated ${result.updated}. ${result.total_in_db} total in database.`,
+      })
+      await load()
+    } catch (error) {
+      toast({
+        title: "Seed failed",
+        description: error instanceof Error ? error.message : "Try again",
+        variant: "destructive",
+      })
+    } finally {
+      setSeeding(false)
+    }
+  }
+
+  const filtered = specialties.filter(
+    (s) =>
+      s.name.toLowerCase().includes(search.toLowerCase()) ||
+      (s.description || "").toLowerCase().includes(search.toLowerCase()),
   )
 
   return (
@@ -123,12 +183,30 @@ export default function AdminSpecialtiesPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Skills & Specialties</h1>
-          <p className="text-[14px] text-slate-500">Manage the skills list used in onboarding and profiles.</p>
+          <p className="text-[14px] text-slate-500">
+            Onboarding loads skills from the database — not a hardcoded list. This page manages that list.
+          </p>
         </div>
-        <Button onClick={openCreate}>
-          <Plus className="mr-2 h-4 w-4" /> Add skill
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={load} disabled={loading}>
+            <RefreshCw className="mr-2 h-4 w-4" /> Refresh
+          </Button>
+          <Button variant="outline" onClick={handleSeed} disabled={seeding || readOnly}>
+            {seeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Seed defaults
+          </Button>
+          <Button onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" /> Add skill
+          </Button>
+        </div>
       </div>
+
+      {readOnly && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-900">
+          Read-only mode: showing the same skills onboarding uses. Restart the API after{" "}
+          <code className="rounded bg-amber-100 px-1">git pull</code> to enable editing here.
+        </div>
+      )}
 
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -138,7 +216,11 @@ export default function AdminSpecialtiesPage() {
       <Card>
         <CardHeader>
           <CardTitle>All skills ({filtered.length})</CardTitle>
-          <CardDescription>Changes apply to new onboarding selections immediately.</CardDescription>
+          <CardDescription>
+            {readOnly
+              ? "Matches what candidates see during onboarding (from API)."
+              : "Add, edit, or remove skills shown in onboarding and profiles."}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -152,20 +234,26 @@ export default function AdminSpecialtiesPage() {
                   <div>
                     <p className="font-medium text-slate-900">{row.name}</p>
                     {row.description && <p className="text-[13px] text-slate-500">{row.description}</p>}
-                    <p className="text-[11px] text-slate-400">{row.profiles_count} profile(s)</p>
+                    {!readOnly && (
+                      <p className="text-[11px] text-slate-400">{row.profiles_count} profile(s)</p>
+                    )}
                   </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => openEdit(row)}>
-                      <Pencil className="mr-1 h-3 w-3" /> Edit
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={() => handleDelete(row)}>
-                      <Trash2 className="mr-1 h-3 w-3" /> Delete
-                    </Button>
-                  </div>
+                  {!readOnly && (
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => openEdit(row)}>
+                        <Pencil className="mr-1 h-3 w-3" /> Edit
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => handleDelete(row)}>
+                        <Trash2 className="mr-1 h-3 w-3" /> Delete
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ))}
               {filtered.length === 0 && (
-                <p className="py-8 text-center text-[13px] text-slate-500">No skills found.</p>
+                <p className="py-8 text-center text-[13px] text-slate-500">
+                  No skills found. Run &quot;Seed defaults&quot; or add skills manually.
+                </p>
               )}
             </div>
           )}

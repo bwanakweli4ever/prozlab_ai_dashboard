@@ -14,7 +14,27 @@ import {
   Target 
 } from "lucide-react"
 
-// Professional Specialties/Skills
+// Default hiring skills — used only when the API is unreachable (offline fallback).
+// Live onboarding reads from GET /api/v1/proz/specialties (database).
+export const DEFAULT_HIRING_SPECIALTIES = [
+  "Computer Repair",
+  "Network Setup",
+  "Data Recovery",
+  "Mobile Repair",
+  "Hardware Install",
+  "Software Support",
+  "Web Development",
+  "Digital Marketing",
+  "Product Design",
+  "Software Engineering",
+  "Data & Analytics",
+  "Cybersecurity",
+  "Cloud & DevOps",
+  "Project Management",
+  "Business Consulting",
+] as const
+
+// Professional Specialties/Skills (icons for /proz filters — subset with UI metadata)
 export const TECH_SKILLS = [
   { name: "Computer Repair", icon: Laptop, color: "bg-blue-500", category: "Hardware" },
   { name: "Network Setup", icon: Wifi, color: "bg-green-500", category: "Networking" },
@@ -30,8 +50,8 @@ export const TECH_SKILLS = [
   { name: "Data Analysis", icon: Target, color: "bg-violet-500", category: "Analytics" },
 ] as const
 
-// Specialties as simple array (for filtering, API calls, etc.)
-export const SPECIALTIES = TECH_SKILLS.map(skill => skill.name)
+// Specialties as simple array (fallback + /proz filter labels when API unavailable)
+export const SPECIALTIES = [...DEFAULT_HIRING_SPECIALTIES]
 
 // Availability options
 export const AVAILABILITY_OPTIONS = [
