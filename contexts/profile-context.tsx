@@ -48,7 +48,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const { token, user } = useAuth()
 
   const fetchProfile = useCallback(async () => {
-    if (!token) {
+    if (!token || user?.is_superuser) {
       setProfile(null)
       return
     }
@@ -75,7 +75,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } finally {
       setIsLoading(false)
     }
-  }, [token])
+  }, [token, user?.is_superuser])
 
   const createProfile = useCallback(async (profileData: ProzProfileCreate): Promise<ProzProfileResponse> => {
     if (!token) {
@@ -138,7 +138,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [token])
 
   const ensureMinimalProfile = useCallback(async (): Promise<ProzProfileResponse | null> => {
-    if (!token || !user?.email) return null
+    if (!token || !user?.email || user.is_superuser) return null
 
     const existing = await prozApi.getOwnProfile(token)
     if (existing) {

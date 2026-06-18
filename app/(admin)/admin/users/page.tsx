@@ -31,6 +31,8 @@ export default function AdminUsersPage() {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isProfileLoading, setIsProfileLoading] = useState(false)
   const [profile, setProfile] = useState<PublicProzProfileWithReviews | null>(null)
+  const [selectedAccount, setSelectedAccount] = useState<User | null>(null)
+  const [isAccountView, setIsAccountView] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [editFormData, setEditFormData] = useState<ProzProfileUpdate>({})
@@ -134,6 +136,14 @@ export default function AdminUsersPage() {
   }
 
   const handleDeleteUser = (user: User) => {
+    if (user.is_superuser) {
+      toast({
+        title: "Cannot delete superuser",
+        description: "Super admin accounts cannot be deleted from this panel.",
+        variant: "destructive",
+      })
+      return
+    }
     setUserToDelete(user)
     setIsDeleteDialogOpen(true)
   }
@@ -204,15 +214,24 @@ export default function AdminUsersPage() {
     setDeleteReason("")
   }
 
-  const handleViewProfile = async (userId: string, userEmail?: string) => {
+  const handleViewProfile = async (user: User) => {
     try {
       setIsProfileLoading(true)
       setProfile(null)
+      setSelectedAccount(null)
+      setIsAccountView(false)
 
-      if (token && userEmail) {
-        const adminList = await adminApi.getProfilesForVerification(token, 1, 20, undefined, userEmail)
+      if (user.is_superuser) {
+        setSelectedAccount(user)
+        setIsAccountView(true)
+        setIsProfileOpen(true)
+        return
+      }
+
+      if (token && user.email) {
+        const adminList = await adminApi.getProfilesForVerification(token, 1, 20, undefined, user.email)
         const match = (adminList?.profiles || []).find(
-          (p: any) => (p.email || "").toLowerCase() === userEmail.toLowerCase(),
+          (p: any) => (p.email || "").toLowerCase() === user.email.toLowerCase(),
         )
         if (match?.id) {
           const data = await adminApi.getProfileForVerification(match.id, token)
@@ -224,7 +243,7 @@ export default function AdminUsersPage() {
 
       if (token) {
         try {
-          const data = await adminApi.getProfileForVerification(userId, token)
+          const data = await adminApi.getProfileForVerification(user.id, token)
           setProfile(data)
           setIsProfileOpen(true)
           return
@@ -444,8 +463,8 @@ export default function AdminUsersPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleViewProfile(user.id, user.email || undefined)}>
-                              View Profile
+                            <DropdownMenuItem onClick={() => handleViewProfile(user)}>
+                              {user.is_superuser ? "View Account" : "View Profile"}
                             </DropdownMenuItem>
                             {!user.is_superuser && (
                               <DropdownMenuItem asChild>
@@ -455,9 +474,12 @@ export default function AdminUsersPage() {
                                 </Link>
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem onClick={() => handleViewProfile(user.id, user.email || undefined).then(() => handleEditProfile())}>
-                              Edit Profile
-                            </DropdownMenuItem>
+                            {!user.is_superuser && (
+                              <DropdownMenuItem onClick={() => handleViewProfile(user).then(() => handleEditProfile())}>
+                                Edit Profile
+                              </DropdownMenuItem>
+                            )}
+                            {!user.is_superuser && (
                             <DropdownMenuItem 
                               onClick={() => handleDeleteUser(user)}
                               className="text-destructive focus:text-destructive"
@@ -465,6 +487,7 @@ export default function AdminUsersPage() {
                               <Trash2 className="h-4 w-4 mr-2" />
                               Delete User
                             </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -513,13 +536,15 @@ export default function AdminUsersPage() {
         if (!open) {
           setIsEditMode(false)
           setEditFormData({})
+          setSelectedAccount(null)
+          setIsAccountView(false)
         }
       }}>
         <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
-              {isEditMode ? "Edit Profile" : "Profile Details"}
-              {profile && !isEditMode && (
+              {isAccountView ? "Account Details" : isEditMode ? "Edit Profile" : "Profile Details"}
+              {profile && !isEditMode && !isAccountView && (
                 <Button onClick={handleEditProfile} size="sm" variant="outline">
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
@@ -527,12 +552,52 @@ export default function AdminUsersPage() {
               )}
             </DialogTitle>
             <DialogDescription>
-              {isProfileLoading ? "Loading profile..." : profile ? `${profile.first_name} ${profile.last_name}` : "No profile available"}
+              {isProfileLoading
+                ? "Loading..."
+                : isAccountView && selectedAccount
+                  ? `${selectedAccount.first_name} ${selectedAccount.last_name}`
+                  : profile
+                    ? `${profile.first_name} ${profile.last_name}`
+                    : "No profile available"}
             </DialogDescription>
           </DialogHeader>
           {isProfileLoading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : isAccountView && selectedAccount ? (
+            <div className="space-y-4 text-sm">
+              <p className="text-muted-foreground">
+                Super admins manage the platform and do not have a public professional profile.
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-muted-foreground">Email</div>
+                  <div className="font-medium">{selectedAccount.email}</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Role</div>
+                  <div className="font-medium">Super Admin</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Status</div>
+                  <div className="font-medium">{selectedAccount.is_active ? "Active" : "Inactive"}</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Email verified</div>
+                  <div className="font-medium">{selectedAccount.is_verified ? "Yes" : "No"}</div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">Joined</div>
+                  <div className="font-medium">
+                    {new Date(selectedAccount.created_at || Date.now()).toLocaleDateString()}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-muted-foreground">User ID</div>
+                  <div className="font-mono text-xs break-all">{selectedAccount.id}</div>
+                </div>
+              </div>
             </div>
           ) : profile ? (
             <div className="space-y-6">
