@@ -54,7 +54,7 @@ export const TECH_SKILLS = [
 export const SPECIALTIES = [...DEFAULT_HIRING_SPECIALTIES]
 
 /** Book a demo — Calendly scheduling */
-export const BOOK_DEMO_URL = "https://calendly.com/rugogwe2/30min"
+export const BOOK_DEMO_URL = "https://calendly.com/prozlabteam/30min"
 
 // Availability options
 export const AVAILABILITY_OPTIONS = [
