@@ -284,6 +284,31 @@ function getAvailabilityStatus(value?: string): {
 interface CandidateProfileViewProps {
   profile: ExtendedProfile
   onEdit?: (section?: "personal" | "summary" | "experience" | "education" | "contact") => void
+  readOnly?: boolean
+}
+
+function estimateProfileCompletion(profile: ExtendedProfile): number {
+  const fields: (keyof ExtendedProfile)[] = [
+    "first_name",
+    "last_name",
+    "email",
+    "phone_number",
+    "bio",
+    "location",
+    "years_experience",
+    "hourly_rate",
+    "availability",
+    "education",
+    "certifications",
+    "website",
+    "linkedin",
+    "preferred_contact_method",
+  ]
+  const completed = fields.filter((field) => {
+    const value = profile[field]
+    return value !== null && value !== undefined && String(value).trim() !== ""
+  }).length
+  return Math.round((completed / fields.length) * 100)
 }
 
 function profileEditHref(section?: "personal" | "summary" | "experience" | "education" | "contact") {
@@ -292,7 +317,7 @@ function profileEditHref(section?: "personal" | "summary" | "experience" | "educ
   return `/dashboard/profile/view?${params.toString()}`
 }
 
-export function CandidateProfileView({ profile, onEdit }: CandidateProfileViewProps) {
+export function CandidateProfileView({ profile, onEdit, readOnly = false }: CandidateProfileViewProps) {
   const router = useRouter()
   const { calculateProfileCompletion } = useProfile()
   const [bioExpanded, setBioExpanded] = useState(false)
@@ -304,7 +329,9 @@ export function CandidateProfileView({ profile, onEdit }: CandidateProfileViewPr
   const hiddenSkillCount = Math.max(0, skills.length - 8)
   const projects = deriveProjects(profile, skills)
   const bioBullets = parseBioBullets(profile.bio)
-  const { percentage } = calculateProfileCompletion()
+  const { percentage } = readOnly
+    ? { percentage: estimateProfileCompletion(profile) }
+    : calculateProfileCompletion()
 
   const isVerified = profile.verification_status === "verified"
   const skillVerified = profile.skill_verification_status === "verified"
@@ -400,6 +427,7 @@ export function CandidateProfileView({ profile, onEdit }: CandidateProfileViewPr
           </div>
 
           <div className="relative z-10 rounded-b-2xl bg-white px-6 pb-6 pt-4">
+            {!readOnly && (
             <Button
               type="button"
               variant="outline"
@@ -410,6 +438,7 @@ export function CandidateProfileView({ profile, onEdit }: CandidateProfileViewPr
               <Pencil className="h-3.5 w-3.5" />
               Edit profile
             </Button>
+            )}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
               <div className="relative shrink-0 -mt-[72px]">
                 <Avatar className="h-[116px] w-[116px] border-[5px] border-white shadow-xl">
@@ -487,6 +516,7 @@ export function CandidateProfileView({ profile, onEdit }: CandidateProfileViewPr
         <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-[15px] font-bold text-slate-900">About Me</h2>
+            {!readOnly && (
             <button
               type="button"
               onClick={() => openEdit("summary")}
@@ -495,6 +525,7 @@ export function CandidateProfileView({ profile, onEdit }: CandidateProfileViewPr
               <Pencil className="h-3 w-3" />
               Edit
             </button>
+            )}
           </div>
           <div className="mt-4 grid gap-6 lg:grid-cols-[1fr_200px]">
             <div className="min-w-0 pr-2">
@@ -550,6 +581,7 @@ export function CandidateProfileView({ profile, onEdit }: CandidateProfileViewPr
         <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-[15px] font-bold text-slate-900">Skills</h2>
+            {!readOnly && (
             <button
               type="button"
               onClick={() => openEdit("summary")}
@@ -558,6 +590,7 @@ export function CandidateProfileView({ profile, onEdit }: CandidateProfileViewPr
               <Pencil className="h-3 w-3" />
               Edit
             </button>
+            )}
           </div>
           <div className="mt-4 flex flex-wrap gap-2">
             {visibleSkills.length > 0 ? (
@@ -589,6 +622,8 @@ export function CandidateProfileView({ profile, onEdit }: CandidateProfileViewPr
               </>
             ) : (
               <p className="text-[13px] leading-relaxed text-slate-500">
+                {readOnly ? "No skills listed yet." : (
+                <>
                 No short skill tags yet.{" "}
                 <button
                   type="button"
@@ -598,6 +633,8 @@ export function CandidateProfileView({ profile, onEdit }: CandidateProfileViewPr
                   Add skills in Edit Profile
                 </button>{" "}
                 — education history stays in Experience below.
+                </>
+                )}
               </p>
             )}
           </div>
@@ -607,9 +644,11 @@ export function CandidateProfileView({ profile, onEdit }: CandidateProfileViewPr
         <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-[15px] font-bold text-slate-900">Featured Projects</h2>
+            {!readOnly && (
             <Link href="/dashboard/verification" className="text-[12px] font-semibold text-brand hover:underline">
               View all projects
             </Link>
+            )}
           </div>
           {projects.length > 0 ? (
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -690,6 +729,7 @@ export function CandidateProfileView({ profile, onEdit }: CandidateProfileViewPr
         <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-[15px] font-bold text-slate-900">Experience</h2>
+            {!readOnly && (
             <button
               type="button"
               onClick={() => openEdit("experience")}
@@ -698,6 +738,7 @@ export function CandidateProfileView({ profile, onEdit }: CandidateProfileViewPr
               <Pencil className="h-3 w-3" />
               Edit
             </button>
+            )}
           </div>
           <div className="relative mt-5 pl-6 pr-2">
             <span className="absolute left-0 top-1.5 h-3 w-3 rounded-full border-[3px] border-brand bg-white" />
@@ -760,8 +801,13 @@ export function CandidateProfileView({ profile, onEdit }: CandidateProfileViewPr
             <ProfileRing value={percentage} />
           </div>
           <p className="text-center text-[12px] leading-relaxed text-slate-500">
-            A stronger profile gets you <span className="font-semibold text-slate-700">3× more matches</span>
+            {readOnly ? (
+              <>Profile is <span className="font-semibold text-slate-700">{percentage}% complete</span></>
+            ) : (
+              <>A stronger profile gets you <span className="font-semibold text-slate-700">3× more matches</span></>
+            )}
           </p>
+          {!readOnly && (
           <Button
             className="mt-4 w-full rounded-xl bg-brand py-5 text-[14px] font-semibold shadow-md shadow-indigo-200 hover:bg-brand-dark"
                 onClick={() =>
@@ -770,6 +816,7 @@ export function CandidateProfileView({ profile, onEdit }: CandidateProfileViewPr
           >
             Complete Profile
           </Button>
+          )}
           <p className="mt-2 text-center text-[11px] font-semibold text-emerald-600">+{visibilityBoost}% visibility</p>
           <ul className="mt-4 space-y-2.5 border-t border-slate-100 pt-4">
             <ChecklistRow done={hasBasic} label="Basic Information" />
@@ -808,6 +855,7 @@ export function CandidateProfileView({ profile, onEdit }: CandidateProfileViewPr
                       ? "Employers can see you're open to new opportunities."
                       : "Your profile shows you're not currently open to new work."}
                   </p>
+                  {!readOnly && (
                   <button
                     type="button"
                     onClick={() => openEdit("experience")}
@@ -815,12 +863,14 @@ export function CandidateProfileView({ profile, onEdit }: CandidateProfileViewPr
                   >
                     Edit availability
                   </button>
+                  )}
                 </>
               ) : (
                 <>
                   <p className="mt-1 text-[12px] leading-relaxed text-slate-500">
                     Let employers know when you&apos;re open for new opportunities.
                   </p>
+                  {!readOnly && (
                   <button
                     type="button"
                     onClick={() => openEdit("experience")}
@@ -828,6 +878,7 @@ export function CandidateProfileView({ profile, onEdit }: CandidateProfileViewPr
                   >
                     Set Availability
                   </button>
+                  )}
                 </>
               )}
             </div>
@@ -835,6 +886,7 @@ export function CandidateProfileView({ profile, onEdit }: CandidateProfileViewPr
         </div>
 
         {/* Quick Actions */}
+        {!readOnly && (
         <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
           <p className="border-b border-slate-100 px-4 py-3 text-[13px] font-bold text-slate-900">Quick Actions</p>
           <ul>
@@ -854,8 +906,10 @@ export function CandidateProfileView({ profile, onEdit }: CandidateProfileViewPr
             ))}
           </ul>
         </div>
+        )}
 
         {/* Need Help */}
+        {!readOnly && (
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm">
           <p className="text-[13px] font-bold text-slate-900">Need Help?</p>
           <p className="mt-1 text-[12px] text-slate-500">We&apos;re here to help you succeed.</p>
@@ -868,6 +922,7 @@ export function CandidateProfileView({ profile, onEdit }: CandidateProfileViewPr
             Contact Support
           </Button>
         </div>
+        )}
       </div>
     </div>
   )

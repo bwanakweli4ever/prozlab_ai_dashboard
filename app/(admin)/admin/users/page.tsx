@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { toast } from "@/components/ui/use-toast"
 import { useAuth } from "@/contexts/auth-context"
 import { authApi, adminApi, prozProfilesApi } from "@/lib/api"
+import { CandidateProfileView } from "@/components/dashboard/candidate-profile-view"
 import type { PublicProzProfileWithReviews, ProzProfileUpdate } from "@/types/api"
 import type { User } from "@/types/api"
 
@@ -540,10 +541,17 @@ export default function AdminUsersPage() {
           setIsAccountView(false)
         }
       }}>
-        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+        <DialogContent
+          className={
+            isEditMode || isAccountView
+              ? "max-h-[90vh] overflow-y-auto sm:max-w-[800px]"
+              : "max-h-[92vh] w-[min(1200px,98vw)] max-w-[1200px] overflow-y-auto p-0"
+          }
+        >
+          <div className={isEditMode || isAccountView ? "" : "border-b border-slate-100 px-4 py-4 sm:px-6"}>
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
-              {isAccountView ? "Account Details" : isEditMode ? "Edit Profile" : "Profile Details"}
+              {isAccountView ? "Account Details" : isEditMode ? "Edit Profile" : "Full Profile"}
               {profile && !isEditMode && !isAccountView && (
                 <Button onClick={handleEditProfile} size="sm" variant="outline">
                   <Edit className="h-4 w-4 mr-2" />
@@ -789,44 +797,13 @@ export default function AdminUsersPage() {
                   </div>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold">Basics</h3>
-                    <p className="text-sm text-muted-foreground">{profile.location || "Location not specified"}</p>
-                    <div className="flex gap-2 mt-2 flex-wrap">
-                      {(profile.specialties || []).map((s) => (
-                        <Badge key={s} variant="outline">{s}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <div className="text-muted-foreground">Rating</div>
-                      <div className="font-medium">{profile.rating ?? "N/A"}</div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground">Reviews</div>
-                      <div className="font-medium">{profile.review_count ?? 0}</div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground">Experience</div>
-                      <div className="font-medium">{profile.years_experience ?? 0} yrs</div>
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground">Hourly Rate</div>
-                      <div className="font-medium">{profile.hourly_rate ? `$${profile.hourly_rate}/hr` : "—"}</div>
-                    </div>
-                  </div>
-                  {profile.bio && (
-                    <div>
-                      <h3 className="font-semibold">About</h3>
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{profile.bio}</p>
-                    </div>
-                  )}
+                <div className="p-4 sm:p-6">
+                  <CandidateProfileView profile={profile} readOnly />
                 </div>
               )}
             </div>
           ) : null}
+          </div>
         </DialogContent>
       </Dialog>
 

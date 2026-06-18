@@ -180,7 +180,7 @@ export function HiringLandingPage() {
               </p>
               <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap">
                 <Button className="h-11 w-full rounded-lg bg-brand px-6 text-[14px] font-semibold shadow-md shadow-indigo-200 hover:bg-brand-dark sm:h-12 sm:w-auto sm:px-7 sm:text-[15px]" asChild>
-                  <Link href="/register">Hire Proven Professionals</Link>
+                  <Link href="/request-service">Hire Proven Professionals</Link>
                 </Button>
                 <Button variant="outline" className="h-11 w-full rounded-lg border-slate-300 bg-white px-6 text-[14px] font-semibold text-slate-700 hover:bg-slate-50 sm:h-12 sm:w-auto sm:px-7 sm:text-[15px]" asChild>
                   <Link href="/register">I&apos;m a Professional</Link>
@@ -415,7 +415,7 @@ export function HiringLandingPage() {
                   </p>
                   <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap">
                     <Button className="h-11 w-full rounded-lg bg-brand px-6 font-semibold hover:bg-brand-dark sm:h-11 sm:w-auto" asChild>
-                      <Link href="/register">Hire Proven Professionals</Link>
+                      <Link href="/request-service">Hire Proven Professionals</Link>
                     </Button>
                     <Button variant="outline" className="h-11 w-full rounded-lg border-white/25 bg-transparent px-6 font-semibold text-white hover:bg-white/10 sm:h-11 sm:w-auto" asChild>
                       <Link href="#contact">Book a Demo</Link>
@@ -501,7 +501,7 @@ export function HiringLandingPage() {
               </div>
               <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row lg:justify-end">
                 <Button className="h-11 w-full rounded-lg bg-brand px-6 text-[14px] font-semibold shadow-md shadow-indigo-200 hover:bg-brand-dark sm:h-12 sm:px-8 sm:text-[15px] lg:w-full xl:w-auto" asChild>
-                  <Link href="/register">
+                  <Link href="/request-service">
                     Hire Proven Professionals
                     <ArrowRight className="ml-1.5 h-4 w-4" />
                   </Link>

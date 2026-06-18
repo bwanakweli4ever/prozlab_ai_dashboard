@@ -275,13 +275,13 @@ export interface VerificationHistoryItem {
 
 // Task Management types
 export interface ServiceRequestCreate {
-  company_name: string
-  client_name: string
-  client_email: string
+  company_name?: string
+  client_name?: string
+  client_email?: string
   client_phone?: string
-  service_title: string
+  service_title?: string
   service_description: string
-  service_category: string
+  service_category?: string
   required_skills?: string
   budget_min?: number
   budget_max?: number
