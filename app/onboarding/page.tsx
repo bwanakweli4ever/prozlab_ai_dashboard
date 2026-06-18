@@ -18,6 +18,7 @@ import { ProzLabLogo } from "@/components/prozlab-logo"
 import { toast } from "@/components/ui/use-toast"
 import { useAuth } from "@/contexts/auth-context"
 import { useProfile } from "@/contexts/profile-context"
+import { API_BASE_URL } from "@/lib/api"
 import type { ProzProfileCreate } from "@/types/api"
 import toastHot from "react-hot-toast"
 import { toast as toastNotify } from "react-toastify"
@@ -430,7 +431,7 @@ export default function OnboardingPage() {
   // AI helpers: fetch review suggestions and nudge fields
   const aiReviewAndNudge = async (field: "bio" | "education" | "certifications") => {
     try {
-      let res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/proz/ai/review-profile`, {
+      let res = await fetch(`${API_BASE_URL}/api/v1/proz/ai/review-profile`, {
         method: "POST",
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -451,7 +452,7 @@ export default function OnboardingPage() {
           website: form.getValues().website,
           linkedin: form.getValues().linkedin,
         }
-        res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/proz/ai/review-draft`, {
+        res = await fetch(`${API_BASE_URL}/api/v1/proz/ai/review-draft`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

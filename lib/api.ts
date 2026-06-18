@@ -1,4 +1,5 @@
 import { assertAuthResponse, normalizeError } from "@/lib/api-errors"
+import { resolveApiBaseUrl } from "@/lib/utils"
 import type {
   ProzProfileResponse,
   ProzProfileUpdate,
@@ -26,11 +27,7 @@ import type {
   ProfileStatsResponse,
 } from "@/types/api"
 
-// Force localhost in development if explicitly requested via DEV_FORCE_LOCALHOST
-const DEV_FORCE_LOCALHOST = process.env.NEXT_PUBLIC_DEV_FORCE_LOCALHOST === 'true'
-export const API_BASE_URL = (
-  DEV_FORCE_LOCALHOST ? 'http://localhost:8000' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000')
-).replace(/\/+$/, "")
+export const API_BASE_URL = resolveApiBaseUrl()
 
 const FRONTEND_HOSTNAMES = new Set(["prozlab.com", "www.prozlab.com"])
 const DEFAULT_BACKEND_API_BASE =
@@ -50,7 +47,8 @@ const getServerBackendBaseUrl = () => {
     try {
       const trimmed = candidate.replace(/\/+$/, "")
       const parsed = new URL(trimmed)
-      if (FRONTEND_HOSTNAMES.has(parsed.hostname.toLowerCase())) {
+      const hostname = parsed.hostname.toLowerCase()
+      if (FRONTEND_HOSTNAMES.has(hostname) || hostname === "app.prozlab.com") {
         continue
       }
       return trimmed

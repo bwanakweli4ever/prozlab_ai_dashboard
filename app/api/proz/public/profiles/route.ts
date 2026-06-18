@@ -23,7 +23,12 @@ const getBackendBaseUrl = (requestHost?: string | null) => {
     try {
       const trimmed = candidate.replace(/\/+$/, "")
       const parsed = new URL(trimmed)
-      if (isFrontendHost(parsed.host) && (!requestHost || isFrontendHost(requestHost))) {
+      const hostname = parsed.hostname.toLowerCase()
+      if (
+        isFrontendHost(hostname) ||
+        hostname === "app.prozlab.com" ||
+        (isFrontendHost(parsed.host) && (!requestHost || isFrontendHost(requestHost)))
+      ) {
         continue
       }
       return trimmed

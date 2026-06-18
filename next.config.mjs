@@ -23,7 +23,10 @@ const nextConfig = {
     ],
   },
   async rewrites() {
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+    const apiBase =
+      process.env.NEXT_PUBLIC_API_URL?.includes("app.prozlab.com")
+        ? "https://api.prozlab.com"
+        : process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
     return [
       {
         source: "/uploads/:path*",
