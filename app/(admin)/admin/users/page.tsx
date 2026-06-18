@@ -15,7 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { toast } from "@/components/ui/use-toast"
 import { useAuth } from "@/contexts/auth-context"
-import { authApi, publicApi, adminApi, prozProfilesApi } from "@/lib/api"
+import { authApi, adminApi, prozProfilesApi } from "@/lib/api"
 import type { PublicProzProfileWithReviews, ProzProfileUpdate } from "@/types/api"
 import type { User } from "@/types/api"
 
@@ -105,28 +105,24 @@ export default function AdminUsersPage() {
 
   const getProfileIdFromUserId = async (userId: string, userEmail?: string): Promise<string | null> => {
     try {
-      // 1) Try using userId as profileId (common when IDs match)
-      try {
-        await publicApi.getProfile(userId, false)
-        return userId
-      } catch (e) {
-        // continue to next strategy
-      }
-
-      // 2) Try include_unverified=true in case profile exists but is not verified yet
-      try {
-        await publicApi.getProfile(userId, true)
-        return userId
-      } catch (e) {
-        // continue to next strategy
-      }
-
-      // 3) Fallback: search admin profiles by email to find the actual profileId
       if (token && userEmail) {
         const adminList = await adminApi.getProfilesForVerification(token, 1, 20, undefined, userEmail)
-        const match = (adminList?.profiles || []).find((p: any) => (p.email || "").toLowerCase() === userEmail.toLowerCase())
+        const match = (adminList?.profiles || []).find(
+          (p: any) => (p.email || "").toLowerCase() === userEmail.toLowerCase(),
+        )
         if (match?.id) {
           return match.id
+        }
+      }
+
+      if (token) {
+        try {
+          const profile = await adminApi.getProfileForVerification(userId, token)
+          if (profile?.id) {
+            return profile.id
+          }
+        } catch {
+          // no profile linked to this user id
         }
       }
 
@@ -212,59 +208,41 @@ export default function AdminUsersPage() {
     try {
       setIsProfileLoading(true)
       setProfile(null)
-      // 1) Try public by provided ID as profileId (common when IDs match)
-      try {
-        const data = await publicApi.getProfile(userId, false)
-        setProfile(data)
-        setIsProfileOpen(true)
-        return
-      } catch (e) {
-        // continue to next strategy
-      }
 
-      // 2) Try include_unverified=true in case profile exists but is not verified yet
-      try {
-        const dataUnverified = await publicApi.getProfile(userId, true)
-        setProfile(dataUnverified)
-        setIsProfileOpen(true)
-        return
-      } catch (e) {
-        // continue to next strategy
-      }
-
-      // 3) Fallback: search admin profiles by email to find the actual profileId
       if (token && userEmail) {
         const adminList = await adminApi.getProfilesForVerification(token, 1, 20, undefined, userEmail)
-        const match = (adminList?.profiles || []).find((p: any) => (p.email || "").toLowerCase() === userEmail.toLowerCase())
+        const match = (adminList?.profiles || []).find(
+          (p: any) => (p.email || "").toLowerCase() === userEmail.toLowerCase(),
+        )
         if (match?.id) {
-          try {
-            const data2 = await publicApi.getProfile(match.id, false)
-            setProfile(data2)
-            setIsProfileOpen(true)
-            return
-          } catch (e) {
-            try {
-              const data3 = await publicApi.getProfile(match.id, true)
-              setProfile(data3)
-              setIsProfileOpen(true)
-              return
-            } catch (e2) {
-              // fall through to toast
-            }
-          }
+          const data = await adminApi.getProfileForVerification(match.id, token)
+          setProfile(data)
+          setIsProfileOpen(true)
+          return
+        }
+      }
+
+      if (token) {
+        try {
+          const data = await adminApi.getProfileForVerification(userId, token)
+          setProfile(data)
+          setIsProfileOpen(true)
+          return
+        } catch {
+          // fall through to not-found toast
         }
       }
 
       toast({
         title: "Profile not found",
-        description: "No public profile is associated with this user or it is not accessible.",
+        description: "This user has not created a professional profile yet.",
         variant: "destructive",
       })
     } catch (error) {
-      console.error("Failed to fetch public profile:", error)
+      console.error("Error loading profile:", error)
       toast({
-        title: "Profile not found",
-        description: "No public profile is associated with this user.",
+        title: "Error",
+        description: "Failed to load profile",
         variant: "destructive",
       })
     } finally {
