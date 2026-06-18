@@ -40,7 +40,6 @@ const navLinks = [
   { label: "How It Works", href: "#how-it-works" },
   { label: "Why Prozlab", href: "#why-prozlab" },
   { label: "Resources", href: "#resources" },
-  { label: "Pricing", href: "#pricing" },
 ]
 
 export function HiringLandingPage() {
