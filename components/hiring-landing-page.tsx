@@ -4,8 +4,6 @@ import { useState } from "react"
 import Link from "next/link"
 import {
   ArrowRight,
-  MapPin,
-  Star,
   Clock,
   FileText,
   Users,
@@ -31,9 +29,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { ProzLabLogo } from "@/components/prozlab-logo"
-
-const HERO_LEAD =
-  "Hire proven professionals, not just qualified applicants. Prozlab uses verified work history, performance signals, and intelligent matching to predict who will succeed on the job—not just pass the interview."
+import { HiringHero } from "@/components/landing/hiring-hero"
 
 const HERO_SUB =
   "Prozlab predicts hiring success using verified skills, real-world assessments, and performance data."
@@ -46,38 +42,6 @@ const navLinks = [
   { label: "Resources", href: "#resources" },
   { label: "Pricing", href: "#pricing" },
 ]
-
-function ProgressBar({ value }: { value: number }) {
-  return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-indigo-100">
-      <div className="h-full rounded-full bg-brand" style={{ width: `${value}%` }} />
-    </div>
-  )
-}
-
-function SuccessGauge() {
-  return (
-    <div className="relative mx-auto flex h-[88px] w-[88px] items-center justify-center">
-      <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r="40" fill="none" stroke="#E0E7FF" strokeWidth="7" />
-        <circle
-          cx="50"
-          cy="50"
-          r="40"
-          fill="none"
-          stroke="#6366F1"
-          strokeWidth="7"
-          strokeLinecap="round"
-          strokeDasharray="251"
-          strokeDashoffset="10"
-        />
-      </svg>
-      <div className="absolute text-center">
-        <div className="text-2xl font-bold text-brand">96%</div>
-      </div>
-    </div>
-  )
-}
 
 export function HiringLandingPage() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
@@ -157,152 +121,7 @@ export function HiringLandingPage() {
       </header>
 
       <main>
-        {/* ── Hero ── */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-[#EEF2FF] via-[#F5F3FF] to-white pb-14 pt-10 sm:pb-20 sm:pt-14 lg:pb-24 lg:pt-20">
-          <div className="pointer-events-none absolute -right-32 -top-32 h-[500px] w-[500px] rounded-full bg-indigo-200/30 blur-3xl" />
-          <div className="relative mx-auto grid max-w-[1200px] items-center gap-10 px-4 sm:gap-12 sm:px-6 lg:grid-cols-2 lg:gap-10 lg:px-8">
-            {/* Left */}
-            <div className="min-w-0">
-              <div className="mb-4 inline-flex max-w-full items-center gap-2 rounded-full border border-indigo-200 bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-brand sm:mb-5 sm:px-4 sm:text-[11px] sm:tracking-[0.12em]">
-                <Sparkles className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">Talent Intelligence Platform</span>
-              </div>
-              <h1 className="text-[1.875rem] font-extrabold leading-[1.12] tracking-tight text-slate-900 sm:text-[2.5rem] lg:text-[3.25rem] lg:leading-[1.08]">
-                Skills Proven by{" "}
-                <span className="text-brand">Real Work,</span>{" "}
-                Not Interviews.
-              </h1>
-              <p className="mt-4 text-[15px] leading-relaxed text-slate-600 sm:mt-5 sm:max-w-[480px] sm:text-[17px]">
-                {HERO_LEAD}
-              </p>
-              <p className="mt-2 text-[14px] leading-relaxed text-slate-500 sm:mt-3 sm:max-w-[480px]">
-                {HERO_SUB}
-              </p>
-              <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap">
-                <Button className="h-11 w-full rounded-lg bg-brand px-6 text-[14px] font-semibold shadow-md shadow-indigo-200 hover:bg-brand-dark sm:h-12 sm:w-auto sm:px-7 sm:text-[15px]" asChild>
-                  <Link href="/request-service">Hire Proven Professionals</Link>
-                </Button>
-                <Button variant="outline" className="h-11 w-full rounded-lg border-slate-300 bg-white px-6 text-[14px] font-semibold text-slate-700 hover:bg-slate-50 sm:h-12 sm:w-auto sm:px-7 sm:text-[15px]" asChild>
-                  <Link href="/register">I&apos;m a Professional</Link>
-                </Button>
-              </div>
-              <div className="mt-7 flex flex-col gap-3 sm:mt-9 sm:flex-row sm:items-center sm:gap-4">
-                <div className="flex -space-x-2.5">
-                  {["#6366F1", "#818CF8", "#4F46E5", "#A5B4FC"].map((color, i) => (
-                    <div
-                      key={i}
-                      className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white text-[11px] font-bold text-white ring-1 ring-slate-100"
-                      style={{ backgroundColor: color, zIndex: 4 - i }}
-                    >
-                      {["A", "B", "C", "D"][i]}
-                    </div>
-                  ))}
-                </div>
-                <div>
-                  <div className="flex gap-0.5">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                    ))}
-                  </div>
-                  <p className="mt-0.5 text-[13px] text-slate-600">
-                    <span className="font-bold text-slate-900">4.9/5</span> from 1,200+ hiring teams
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Right — Candidate card */}
-            <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_20px_60px_-12px_rgba(99,102,241,0.18)]">
-              <div className="flex flex-col lg:flex-row">
-                {/* Main content */}
-                <div className="flex-1 p-4 sm:p-5 lg:p-6">
-                  <div className="flex items-start gap-3.5">
-                    <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 ring-2 ring-indigo-100">
-                      <span className="text-lg font-bold text-white">SM</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="mb-1 inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-600 ring-1 ring-emerald-200">
-                        Top Match
-                      </div>
-                      <h3 className="text-[17px] font-bold text-slate-900">Sophia Martinez</h3>
-                      <p className="text-[13px] text-slate-500">Senior Product Designer</p>
-                      <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[12px] text-slate-500">
-                        <MapPin className="h-3 w-3 shrink-0" />
-                        <span>San Francisco, CA · 8+ years</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap gap-1.5">
-                    {["Product Design", "UI/UX", "Figma", "Design Systems"].map((skill) => (
-                      <span key={skill} className="rounded-full bg-indigo-50 px-2.5 py-1 text-[11px] font-medium text-brand">
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-
-                  <p className="mt-5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-                    Proven by Real Work
-                  </p>
-                  <div className="mt-2.5 grid grid-cols-2 gap-2.5">
-                    {[
-                      { title: "Redesign Dashboard", metric: "+22% user engagement", color: "from-indigo-400 to-violet-500" },
-                      { title: "Mobile App Design", metric: "4.8★ app store rating", color: "from-violet-400 to-purple-500" },
-                    ].map((p) => (
-                      <div key={p.title} className="overflow-hidden rounded-xl border border-slate-100 bg-slate-50">
-                        <div className={`h-[72px] bg-gradient-to-br ${p.color}`} />
-                        <div className="p-2.5">
-                          <p className="text-[11px] font-semibold text-slate-800">{p.title}</p>
-                          <p className="text-[10px] font-medium text-brand">{p.metric}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-4 grid grid-cols-2 gap-2 border-t border-slate-100 pt-4 sm:grid-cols-4 sm:gap-3">
-                    {[
-                      { v: "24", l: "Projects Completed" },
-                      { v: "18", l: "Clients/Teams Worked With" },
-                      { v: "4.9/5", l: "Avg. Performance Rating" },
-                      { v: "98%", l: "On-Time Delivery" },
-                    ].map((s) => (
-                      <div key={s.l} className="text-center">
-                        <div className="text-[17px] font-bold text-slate-900">{s.v}</div>
-                        <div className="mt-0.5 text-[9px] leading-tight text-slate-500">{s.l}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Predicted Success sidebar */}
-                <div className="border-t border-slate-100 bg-indigo-50/60 p-5 lg:w-[200px] lg:border-l lg:border-t-0 lg:p-5">
-                  <p className="text-center text-[11px] font-bold uppercase tracking-wide text-slate-500">
-                    Predicted Success
-                  </p>
-                  <div className="my-3">
-                    <SuccessGauge />
-                  </div>
-                  <div className="space-y-3">
-                    {[
-                      { label: "Skills Match", value: 98 },
-                      { label: "Experience Match", value: 93 },
-                      { label: "Delivery Track Record", value: 97 },
-                      { label: "Verified Work History", value: 95 },
-                    ].map((item) => (
-                      <div key={item.label}>
-                        <div className="mb-1 flex justify-between text-[10px]">
-                          <span className="text-slate-600">{item.label}</span>
-                          <span className="font-bold text-brand">{item.value}%</span>
-                        </div>
-                        <ProgressBar value={item.value} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        <HiringHero />
 
         {/* ── Problem ── */}
         <section id="why-prozlab" className="py-14 sm:py-20 lg:py-24">
