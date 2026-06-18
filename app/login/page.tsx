@@ -16,7 +16,7 @@ import { OnboardingCard } from "@/components/onboarding/onboarding-shell"
 import { toast } from "@/components/ui/use-toast"
 import { useAuth } from "@/contexts/auth-context"
 import { AlertCircle, ArrowLeft, Eye, EyeOff, Lock, Shield } from "lucide-react"
-import { authApi } from "@/lib/api"
+import { authApi, emailApi } from "@/lib/api"
 import toastHot from "react-hot-toast"
 import { toast as toastNotify } from "react-toastify"
 
@@ -49,6 +49,8 @@ export default function LoginPage() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [isResettingWithOtp, setIsResettingWithOtp] = useState(false)
   const [loginError, setLoginError] = useState<string | null>(null)
+  const [needsEmailVerification, setNeedsEmailVerification] = useState(false)
+  const [isResendingVerification, setIsResendingVerification] = useState(false)
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema) as any,
@@ -108,6 +110,7 @@ export default function LoginPage() {
   async function onSubmit(values: FormValues) {
     setIsSubmitting(true)
     setLoginError(null)
+    setNeedsEmailVerification(false)
     form.clearErrors()
 
     try {
@@ -125,6 +128,7 @@ export default function LoginPage() {
       const raw = error instanceof Error ? error.message : "Please check your credentials and try again"
       const message = formatLoginError(raw)
       setLoginError(message)
+      setNeedsEmailVerification(/verify your email/i.test(raw))
 
       if (/incorrect email|invalid credentials|password/i.test(message)) {
         form.setError("password", { type: "manual", message: "Invalid credentials" })
@@ -139,6 +143,38 @@ export default function LoginPage() {
       toastNotify.error(message)
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  async function handleResendVerification() {
+    const valid = await form.trigger("email")
+    if (!valid) {
+      toast({
+        title: "Enter your email",
+        description: "Please enter the email address for your account.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const email = form.getValues("email")
+
+    try {
+      setIsResendingVerification(true)
+      const result = await emailApi.requestVerification(email)
+      const description =
+        result.message ||
+        "If an account exists for that email, a verification link has been sent. Check your inbox and spam folder."
+      toast({ title: "Verification email sent", description })
+      toastHot.success("Check your inbox")
+      toastNotify.success(description)
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Could not send verification email"
+      toast({ title: "Could not resend", description: msg, variant: "destructive" })
+      toastHot.error(msg)
+      toastNotify.error(msg)
+    } finally {
+      setIsResendingVerification(false)
     }
   }
 
@@ -306,9 +342,19 @@ export default function LoginPage() {
                       className="flex gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-left"
                     >
                       <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <p className="text-[13px] font-semibold text-red-800">Sign in failed</p>
                         <p className="mt-0.5 text-[13px] text-red-700">{loginError}</p>
+                        {needsEmailVerification && (
+                          <button
+                            type="button"
+                            onClick={handleResendVerification}
+                            disabled={isResendingVerification}
+                            className="mt-2 text-[13px] font-semibold text-brand underline-offset-2 transition-colors hover:text-brand-dark hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {isResendingVerification ? "Sending verification email…" : "Resend verification email"}
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
@@ -327,7 +373,10 @@ export default function LoginPage() {
                             {...field}
                             onChange={(e) => {
                               field.onChange(e)
-                              if (loginError) setLoginError(null)
+                              if (loginError) {
+                                setLoginError(null)
+                                setNeedsEmailVerification(false)
+                              }
                             }}
                           />
                         </FormControl>
@@ -350,7 +399,10 @@ export default function LoginPage() {
                               {...field}
                               onChange={(e) => {
                                 field.onChange(e)
-                                if (loginError) setLoginError(null)
+                                if (loginError) {
+                                  setLoginError(null)
+                                  setNeedsEmailVerification(false)
+                                }
                               }}
                             />
                             <button

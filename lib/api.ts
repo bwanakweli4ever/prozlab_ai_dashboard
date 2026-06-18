@@ -474,6 +474,23 @@ export const emailApi = {
     }
   },
 
+  /** Public resend — no login required (use on login page). */
+  requestVerification: async (email: string): Promise<EmailVerificationResponse> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/email/request-verification`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      })
+      return handleResponse<EmailVerificationResponse>(response)
+    } catch (error) {
+      console.error("Network error while requesting email verification:", error)
+      throw new Error("Network error: Could not connect to the API.")
+    }
+  },
+
   resendVerification: async (email: string): Promise<EmailVerificationResponse> => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/v1/auth/email/resend-verification`, {
