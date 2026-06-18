@@ -30,6 +30,7 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { ProzLabLogo } from "@/components/prozlab-logo"
 import { HiringHero } from "@/components/landing/hiring-hero"
+import { BOOK_DEMO_URL } from "@/lib/constants"
 
 const HERO_SUB =
   "Prozlab predicts hiring success using verified skills, real-world assessments, and performance data."
@@ -236,7 +237,9 @@ export function HiringLandingPage() {
                       <Link href="/request-service">Hire Proven Professionals</Link>
                     </Button>
                     <Button variant="outline" className="h-11 w-full rounded-lg border-white/25 bg-transparent px-6 font-semibold text-white hover:bg-white/10 sm:h-11 sm:w-auto" asChild>
-                      <Link href="#contact">Book a Demo</Link>
+                      <a href={BOOK_DEMO_URL} target="_blank" rel="noopener noreferrer">
+                        Book a Demo
+                      </a>
                     </Button>
                   </div>
                 </div>
@@ -325,7 +328,9 @@ export function HiringLandingPage() {
                   </Link>
                 </Button>
                 <Button variant="outline" className="h-11 w-full rounded-lg border-slate-300 bg-white px-6 text-[14px] font-semibold sm:h-12 sm:px-8 sm:text-[15px] lg:w-full xl:w-auto" asChild>
-                  <Link href="#contact">Book a Demo</Link>
+                  <a href={BOOK_DEMO_URL} target="_blank" rel="noopener noreferrer">
+                    Book a Demo
+                  </a>
                 </Button>
               </div>
             </div>

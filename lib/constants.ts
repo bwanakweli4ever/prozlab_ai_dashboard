@@ -53,6 +53,9 @@ export const TECH_SKILLS = [
 // Specialties as simple array (fallback + /proz filter labels when API unavailable)
 export const SPECIALTIES = [...DEFAULT_HIRING_SPECIALTIES]
 
+/** Book a demo — Calendly scheduling */
+export const BOOK_DEMO_URL = "https://calendly.com/rugogwe2/30min"
+
 // Availability options
 export const AVAILABILITY_OPTIONS = [
   "Full-time",
