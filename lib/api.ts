@@ -1988,6 +1988,26 @@ export const taskApi = {
     const response = await fetch(`${API_BASE_URL}/api/v1/tasks/public/proposals/${token}`)
     return handleResponse<import("@/types/api").ServiceRequestProposal>(response)
   },
+
+  getAdminNotifications: async (token: string, limit = 20) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/tasks/admin/notifications?limit=${limit}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    return handleResponse<{
+      notifications: Array<{
+        id: string
+        type: string
+        title: string
+        company_name: string
+        client_name: string
+        client_email: string
+        status: string
+        priority: string
+        created_at: string
+      }>
+      total: number
+    }>(response)
+  },
 }
 
 // Professional Profiles API

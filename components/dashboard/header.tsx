@@ -4,14 +4,16 @@ import { Bell, Menu } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { AdminNotificationBell } from "@/components/admin/admin-notification-bell"
 import { useAuth } from "@/contexts/auth-context"
 import { useProfile } from "@/contexts/profile-context"
 
 interface DashboardHeaderProps {
   onMobileMenuToggle?: () => void
+  isAdmin?: boolean
 }
 
-export function DashboardHeader({ onMobileMenuToggle }: DashboardHeaderProps) {
+export function DashboardHeader({ onMobileMenuToggle, isAdmin = false }: DashboardHeaderProps) {
   const { user } = useAuth()
   const { profile } = useProfile()
 
@@ -31,15 +33,19 @@ export function DashboardHeader({ onMobileMenuToggle }: DashboardHeaderProps) {
         <span className="sr-only">Open Menu</span>
       </Button>
 
-      <Button
-        variant="ghost"
-        size="icon"
-        className="relative rounded-full text-slate-600 hover:bg-slate-100"
-        onClick={() => (window.location.href = "/dashboard/notifications")}
-      >
-        <Bell className="h-[18px] w-[18px]" />
-        <span className="sr-only">Notifications</span>
-      </Button>
+      {isAdmin ? (
+        <AdminNotificationBell />
+      ) : (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative rounded-full text-slate-600 hover:bg-slate-100"
+          onClick={() => (window.location.href = "/dashboard/notifications")}
+        >
+          <Bell className="h-[18px] w-[18px]" />
+          <span className="sr-only">Notifications</span>
+        </Button>
+      )}
 
       <div className="flex items-center gap-3">
         <Avatar className="h-9 w-9 border-2 border-white shadow-sm ring-1 ring-slate-200">
@@ -50,7 +56,7 @@ export function DashboardHeader({ onMobileMenuToggle }: DashboardHeaderProps) {
         </Avatar>
         <div className="hidden text-left sm:block">
           <p className="text-[13px] font-semibold leading-tight text-slate-900">{userName}</p>
-          <p className="text-[11px] text-slate-500">Candidate</p>
+          <p className="text-[11px] text-slate-500">{isAdmin ? "Administrator" : "Candidate"}</p>
         </div>
       </div>
     </header>

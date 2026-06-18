@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -16,7 +17,8 @@ import { ServiceRequestDetailDialog } from "@/components/admin/service-request-d
 import toastHot from "react-hot-toast"
 import { toast as toastNotify } from "react-toastify"
 
-export default function AdminTasksPage() {
+function AdminTasksPageContent() {
+  const searchParams = useSearchParams()
   const { token, user } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [serviceRequests, setServiceRequests] = useState<any[]>([])
@@ -481,6 +483,9 @@ export default function AdminTasksPage() {
 
         console.log("Service requests array (normalized):", requestsArray)
         console.log("Service requests length:", requestsArray.length)
+        requestsArray.sort(
+          (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime(),
+        )
         setServiceRequests(requestsArray)
 
         // Get task assignments
@@ -519,6 +524,14 @@ export default function AdminTasksPage() {
     fetchData()
     loadPendingAssignments()
   }, [token, user, refreshTrigger])
+
+  useEffect(() => {
+    const requestId = searchParams.get("requestId")
+    if (requestId) {
+      setDetailRequestId(requestId)
+      setDetailOpen(true)
+    }
+  }, [searchParams])
 
   // Calculate analytics when data changes
   useEffect(() => {
@@ -1363,5 +1376,19 @@ export default function AdminTasksPage() {
         onUpdated={() => setRefreshTrigger((prev) => prev + 1)}
       />
     </div>
+  )
+}
+
+export default function AdminTasksPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center p-12">
+          <Loader2 className="h-8 w-8 animate-spin text-brand" />
+        </div>
+      }
+    >
+      <AdminTasksPageContent />
+    </Suspense>
   )
 }

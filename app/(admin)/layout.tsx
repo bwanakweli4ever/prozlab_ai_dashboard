@@ -49,7 +49,7 @@ export default function AdminLayout({
           onMobileMenuToggle={setIsMobileMenuOpen}
         />
         <div className="flex flex-1 flex-col md:ml-64">
-          <DashboardHeader onMobileMenuToggle={handleMobileMenuToggle} />
+          <DashboardHeader onMobileMenuToggle={handleMobileMenuToggle} isAdmin />
           <main className="flex-1 overflow-x-hidden px-2 sm:px-4 md:px-6 lg:px-8 pt-0 pb-4">{children}</main>
         </div>
         <Toaster />

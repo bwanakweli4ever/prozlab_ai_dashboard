@@ -1,21 +1,47 @@
 "use client"
 
 import { Suspense, useEffect, useState } from "react"
+import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  Copy,
+  FileText,
+  Rocket,
+  ShieldCheck,
+  Target,
+  UserCog,
+} from "lucide-react"
+
 import { Button } from "@/components/ui/button"
-import { CheckCircle, ArrowLeft, Copy } from "lucide-react"
 import { toast } from "@/components/ui/use-toast"
+
+const STEPS = [
+  {
+    icon: UserCog,
+    title: "Request Review",
+    description: "Our team will review your request and match you with work-verified professionals.",
+  },
+  {
+    icon: Target,
+    title: "Professional Matching",
+    description: "We'll connect you with verified professionals who match your requirements.",
+  },
+  {
+    icon: Rocket,
+    title: "Project Kickoff",
+    description: "Once matched, you can start collaborating with your assigned professional.",
+  },
+] as const
 
 export default function RequestServiceSuccessPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen items-center justify-center bg-gray-50">
-          <div className="text-center">
-            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-blue-600" />
-            <p className="mt-2 text-gray-600">Loading...</p>
-          </div>
+        <div className="landing-page flex min-h-screen items-center justify-center bg-gradient-to-b from-[#EEF2FF] to-white">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
         </div>
       }
     >
@@ -31,144 +57,148 @@ function RequestServiceSuccessContent() {
 
   useEffect(() => {
     const id = searchParams.get("id")
-    if (id) {
-      setRequestId(id)
-    } else {
-      // Redirect to request service page if no ID
-      router.push("/request-service")
-    }
+    if (id) setRequestId(id)
+    else router.push("/request-service")
   }, [searchParams, router])
 
   const copyRequestId = () => {
-    if (requestId) {
-      navigator.clipboard.writeText(requestId)
-      toast({
-        title: "Copied!",
-        description: "Request ID copied to clipboard",
-      })
-    }
+    if (!requestId) return
+    navigator.clipboard.writeText(requestId)
+    toast({ title: "Copied!", description: "Request ID copied to clipboard" })
   }
 
   if (!requestId) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading...</p>
-        </div>
+      <div className="landing-page flex min-h-screen items-center justify-center bg-gradient-to-b from-[#EEF2FF] to-white">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-brand border-t-transparent" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-2xl mx-auto px-4">
-        <div className="text-center mb-8">
-          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-gray-900">Request Submitted Successfully!</h1>
-          <p className="text-gray-600 mt-2">
+    <div className="landing-page min-h-screen bg-gradient-to-b from-[#EEF2FF] via-[#F8FAFF] to-white px-4 py-10 sm:py-14">
+      <div className="mx-auto max-w-3xl">
+        {/* Success header */}
+        <div className="mb-8 text-center">
+          <div className="relative mx-auto mb-5 flex h-20 w-20 items-center justify-center">
+            <div className="absolute inset-0 rounded-full bg-emerald-400/20 blur-xl" />
+            <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-lg ring-4 ring-emerald-100">
+              <CheckCircle2 className="h-9 w-9 text-emerald-500" strokeWidth={2.5} />
+            </div>
+          </div>
+          <h1 className="text-[clamp(1.5rem,4vw,2rem)] font-extrabold tracking-tight text-slate-900">
+            Request Submitted Successfully!
+          </h1>
+          <p className="mt-2 text-[15px] text-slate-500">
             Your service request has been received and is being processed.
           </p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Request Details</CardTitle>
-            <CardDescription>
-              Please save your request ID for tracking and future reference.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-blue-900">Request ID</p>
-                  <p className="text-lg font-mono text-blue-700 break-all">{requestId}</p>
+        {/* Dark card */}
+        <div className="overflow-hidden rounded-3xl bg-[#0B1220] shadow-2xl shadow-indigo-900/20 ring-1 ring-white/10">
+          <div className="p-6 sm:p-8">
+            {/* Request details */}
+            <div className="mb-8">
+              <div className="mb-4 flex items-center gap-2 text-white">
+                <FileText className="h-5 w-5 text-indigo-300" />
+                <h2 className="text-lg font-semibold">Request Details</h2>
+              </div>
+              <p className="mb-4 text-[13px] text-slate-400">
+                Please save your request ID for tracking and future reference.
+              </p>
+              <div className="flex flex-col gap-3 rounded-2xl bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Request ID</p>
+                  <p className="mt-1 break-all font-mono text-[13px] font-medium text-indigo-600 sm:text-sm">
+                    {requestId}
+                  </p>
                 </div>
                 <Button
+                  type="button"
                   variant="outline"
                   size="sm"
                   onClick={copyRequestId}
-                  className="flex items-center space-x-1"
+                  className="shrink-0 border-indigo-200 text-indigo-700 hover:bg-indigo-50"
                 >
-                  <Copy className="w-4 h-4" />
-                  <span>Copy</span>
+                  <Copy className="mr-1.5 h-4 w-4" />
+                  Copy
                 </Button>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-gray-900">What happens next?</h3>
-              <div className="space-y-3">
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-xs font-bold text-blue-600">1</span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Request Review</p>
-                    <p className="text-sm text-gray-600">
-                      Our team will review your request and match you with work-verified professionals.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-xs font-bold text-blue-600">2</span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Professional Matching</p>
-                    <p className="text-sm text-gray-600">
-                      We'll connect you with verified professionals who match your requirements.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start space-x-3">
-                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-xs font-bold text-blue-600">3</span>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">Project Kickoff</p>
-                    <p className="text-sm text-gray-600">
-                      Once matched, you can start collaborating with your assigned professional.
-                    </p>
-                  </div>
-                </div>
+            {/* Timeline */}
+            <div className="mb-8">
+              <h3 className="mb-5 text-base font-semibold text-white">What happens next?</h3>
+              <div className="relative space-y-6 pl-2">
+                <div className="absolute bottom-4 left-[19px] top-4 w-px border-l border-dashed border-slate-600" />
+                {STEPS.map((step, index) => {
+                  const Icon = step.icon
+                  return (
+                    <div key={step.title} className="relative flex gap-4">
+                      <div className="relative z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white shadow-lg shadow-indigo-900/40">
+                        {index + 1}
+                      </div>
+                      <div className="min-w-0 pt-0.5">
+                        <div className="flex items-center gap-2">
+                          <Icon className="h-4 w-4 text-indigo-300" />
+                          <p className="font-semibold text-white">{step.title}</p>
+                        </div>
+                        <p className="mt-1 text-[13px] leading-relaxed text-slate-400">{step.description}</p>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
 
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="flex items-start space-x-3">
-                <div className="w-5 h-5 text-yellow-600 mt-0.5">
-                  <svg fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                </div>
+            {/* Important note */}
+            <div className="mb-8 rounded-2xl border border-amber-400/30 bg-amber-50/95 p-4 sm:p-5">
+              <div className="flex gap-3">
+                <div className="mt-0.5 text-amber-500">⚠️</div>
                 <div>
-                  <p className="font-medium text-yellow-800">Important Note</p>
-                  <p className="text-sm text-yellow-700 mt-1">
-                    You will receive an email confirmation shortly. Please check your spam folder if you don't see it in your inbox.
+                  <p className="font-semibold text-amber-900">Important Note</p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-amber-800">
+                    You will receive an email confirmation shortly. Please check your spam folder if you
+                    don&apos;t see it in your inbox. Questions? Email{" "}
+                    <a href="mailto:support@prozlab.com" className="font-semibold text-amber-900 underline">
+                      support@prozlab.com
+                    </a>
+                    .
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex gap-4 pt-4">
-              <Button onClick={() => router.push("/")} className="flex-1">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Home
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => router.push("/request-service")}
-                className="flex-1"
+            {/* Actions */}
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button
+                className="h-12 flex-1 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-[14px] font-semibold hover:from-indigo-700 hover:to-violet-700"
+                asChild
               >
-                Submit Another Request
+                <Link href="/">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Home
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                className="h-12 flex-1 rounded-xl border-indigo-400/40 bg-transparent text-[14px] font-semibold text-white hover:bg-white/10 hover:text-white"
+                asChild
+              >
+                <Link href="/request-service">
+                  Submit Another Request
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+
+        {/* Security footer */}
+        <div className="mt-8 flex items-center justify-center gap-2 text-[12px] text-slate-500">
+          <ShieldCheck className="h-4 w-4 text-brand" />
+          <span>Your data is secure with us. We use industry-standard encryption to protect your information.</span>
+        </div>
       </div>
     </div>
   )
