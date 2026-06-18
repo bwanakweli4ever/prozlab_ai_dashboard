@@ -44,62 +44,66 @@ const FEATURE_BAR = [
   { label: "Better Hires", sub: "Stronger teams", icon: Users },
 ]
 
-function GitHubMark({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-      <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
-    </svg>
-  )
-}
-
 export function HiringHero() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-[#EEF2FF] via-[#F5F3FF] to-white pb-8 pt-10 sm:pb-12 sm:pt-14 lg:pb-16 lg:pt-16">
-      <div className="pointer-events-none absolute -left-24 top-0 h-[420px] w-[420px] rounded-full bg-indigo-200/25 blur-3xl" />
-      <div className="pointer-events-none absolute -right-24 top-10 h-[480px] w-[480px] rounded-full bg-violet-200/30 blur-3xl" />
+    <section className="relative isolate min-h-[680px] overflow-hidden bg-[#F5F3FF] sm:min-h-[720px] lg:min-h-[760px]">
+      {/* Full-bleed background visual — matches mockup (woman + floating UI on the right) */}
+      <div className="pointer-events-none absolute inset-0">
+        <Image
+          src="/images/hero/professional-workspace.png"
+          alt=""
+          fill
+          priority
+          className="object-cover object-[72%_42%] sm:object-[68%_40%] lg:object-[right_center]"
+          sizes="100vw"
+          aria-hidden
+        />
+        {/* Left wash so copy + comparison sit on clean lavender like the mockup */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#F5F3FF] from-0% via-[#F5F3FF]/97 via-[38%] to-transparent to-[62%] sm:via-[42%] sm:to-[58%] lg:via-[#F5F3FF]/92 lg:via-[48%] lg:to-transparent lg:to-[52%]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#EEF2FF]/50 via-transparent to-white/70" />
+      </div>
 
-      <div className="relative mx-auto max-w-[1240px] px-4 sm:px-6 lg:px-8">
-        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-8 xl:gap-12">
-          {/* Left — copy + comparison */}
-          <div className="min-w-0">
+      <div className="relative mx-auto flex min-h-[680px] max-w-[1240px] flex-col px-4 pb-8 pt-10 sm:min-h-[720px] sm:px-6 sm:pb-10 sm:pt-12 lg:min-h-[760px] lg:px-8 lg:pb-12 lg:pt-14">
+        <div className="flex flex-1 flex-col justify-center">
+          <div className="w-full max-w-[540px] lg:max-w-[560px]">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-200/80 bg-white/90 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-brand shadow-sm sm:text-[11px]">
               <Sparkles className="h-3.5 w-3.5" />
               Talent Intelligence Platform
             </div>
 
-            <h1 className="max-w-[640px] text-[1.875rem] font-extrabold leading-[1.1] tracking-tight text-slate-900 sm:text-[2.35rem] lg:text-[3rem]">
+            <h1 className="text-[1.875rem] font-extrabold leading-[1.08] tracking-tight text-slate-900 sm:text-[2.35rem] lg:text-[2.85rem] xl:text-[3rem]">
               Skills Proven by{" "}
               <span className="text-brand">Real Work,</span>
-              <br className="hidden sm:block" /> Not Interviews.
+              <br />
+              Not Interviews.
             </h1>
 
-            <p className="mt-4 max-w-[560px] text-[15px] leading-relaxed text-slate-600 sm:text-[16px]">
+            <p className="mt-4 text-[14px] leading-relaxed text-slate-600 sm:text-[15px] lg:text-[16px]">
               {HERO_LEAD}
             </p>
-            <p className="mt-2 max-w-[560px] text-[14px] leading-relaxed text-slate-500">
+            <p className="mt-2 text-[13px] leading-relaxed text-slate-500 sm:text-[14px]">
               {HERO_SUB}
             </p>
 
-            {/* Traditional vs Prozlab */}
-            <div className="mt-8 rounded-2xl border border-white/80 bg-white/70 p-4 shadow-[0_12px_40px_-20px_rgba(99,102,241,0.35)] backdrop-blur-sm sm:p-5">
-              <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-3 sm:gap-4">
-                {/* Traditional */}
+            {/* Traditional vs Prozlab — sits over the light left area like mockup */}
+            <div className="mt-7 rounded-2xl border border-white/90 bg-white/75 p-3.5 shadow-[0_12px_40px_-20px_rgba(99,102,241,0.3)] backdrop-blur-md sm:mt-8 sm:p-4">
+              <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-2.5 sm:gap-3">
                 <div>
-                  <p className="mb-3 text-center text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                  <p className="mb-2.5 text-center text-[10px] font-bold uppercase tracking-wide text-slate-400 sm:text-[11px]">
                     Traditional Hiring
                   </p>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {TRADITIONAL_STEPS.map((step, index) => (
                       <div key={step.label}>
-                        <div className="flex items-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50/90 px-3 py-2.5">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white text-slate-500 shadow-sm">
-                            <step.icon className="h-4 w-4" />
+                        <div className="flex items-center gap-2 rounded-xl border border-slate-200/90 bg-white/90 px-2.5 py-2 sm:px-3 sm:py-2.5">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-slate-500 sm:h-8 sm:w-8">
+                            <step.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           </div>
-                          <span className="text-[12px] font-semibold text-slate-700 sm:text-[13px]">{step.label}</span>
+                          <span className="text-[11px] font-semibold text-slate-700 sm:text-[12px]">{step.label}</span>
                         </div>
                         {index < TRADITIONAL_STEPS.length - 1 && (
-                          <div className="flex justify-center py-1 text-slate-300">
-                            <ArrowDown className="h-4 w-4" />
+                          <div className="flex justify-center py-0.5 text-slate-300">
+                            <ArrowDown className="h-3.5 w-3.5" />
                           </div>
                         )}
                       </div>
@@ -107,39 +111,37 @@ export function HiringHero() {
                   </div>
                 </div>
 
-                {/* VS */}
-                <div className="flex flex-col items-center pt-8">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-brand to-violet-500 text-[11px] font-extrabold text-white shadow-lg shadow-indigo-300/50">
+                <div className="flex flex-col items-center pt-7 sm:pt-8">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-brand to-violet-500 text-[10px] font-extrabold text-white shadow-lg shadow-indigo-300/50 sm:h-10 sm:w-10 sm:text-[11px]">
                     VS
                   </div>
                 </div>
 
-                {/* Prozlab */}
                 <div>
-                  <div className="mb-3 flex justify-center">
-                    <span className="rounded-full bg-gradient-to-r from-brand to-violet-500 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-md">
+                  <div className="mb-2.5 flex justify-center">
+                    <span className="rounded-full bg-gradient-to-r from-brand to-violet-500 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow-md sm:px-3 sm:py-1 sm:text-[10px]">
                       Prozlab Hiring
                     </span>
                   </div>
-                  <div className="overflow-hidden rounded-xl border border-indigo-100 bg-white shadow-sm">
-                    <div className="space-y-0 divide-y divide-indigo-50">
+                  <div className="overflow-hidden rounded-xl border border-indigo-100 bg-white/95 shadow-sm">
+                    <div className="divide-y divide-indigo-50">
                       {PROZLAB_PROOF.map((item) => (
-                        <div key={item.label} className="flex items-center gap-2.5 px-3 py-2.5">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-brand">
-                            <item.icon className="h-4 w-4" />
+                        <div key={item.label} className="flex items-center gap-2 px-2.5 py-2 sm:px-3 sm:py-2.5">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-brand sm:h-8 sm:w-8">
+                            <item.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                           </div>
-                          <span className="text-[11px] font-semibold leading-tight text-slate-800 sm:text-[12px]">
+                          <span className="text-[10px] font-semibold leading-tight text-slate-800 sm:text-[11px]">
                             {item.label}
                           </span>
                         </div>
                       ))}
                     </div>
-                    <div className="border-t border-indigo-100 bg-gradient-to-r from-indigo-50 to-violet-50 px-3 py-3">
+                    <div className="border-t border-indigo-100 bg-gradient-to-r from-indigo-50 to-violet-50 px-2.5 py-2.5 sm:px-3 sm:py-3">
                       <div className="flex items-start gap-2">
-                        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
+                        <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand sm:h-4 sm:w-4" />
                         <div>
-                          <p className="text-[12px] font-bold text-slate-900 sm:text-[13px]">96% Predicted Success</p>
-                          <p className="text-[10px] text-slate-500 sm:text-[11px]">Hire with confidence</p>
+                          <p className="text-[11px] font-bold text-slate-900 sm:text-[12px]">96% Predicted Success</p>
+                          <p className="text-[9px] text-slate-500 sm:text-[10px]">Hire with confidence</p>
                         </div>
                       </div>
                     </div>
@@ -148,61 +150,35 @@ export function HiringHero() {
               </div>
             </div>
 
-            <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap">
+            <div className="mt-6 flex flex-col gap-3 sm:mt-7 sm:flex-row sm:flex-wrap">
               <Button
-                className="h-11 w-full rounded-xl bg-brand px-6 text-[14px] font-semibold shadow-md shadow-indigo-200 hover:bg-brand-dark sm:h-12 sm:w-auto sm:px-7 sm:text-[15px]"
+                className="h-11 w-full rounded-xl bg-brand px-6 text-[14px] font-semibold shadow-md shadow-indigo-200 hover:bg-brand-dark sm:h-12 sm:w-auto sm:px-7"
                 asChild
               >
                 <Link href="/request-service">Hire Proven Professionals</Link>
               </Button>
               <Button
                 variant="outline"
-                className="h-11 w-full rounded-xl border-slate-300 bg-white px-6 text-[14px] font-semibold text-slate-700 hover:bg-slate-50 sm:h-12 sm:w-auto sm:px-7 sm:text-[15px]"
+                className="h-11 w-full rounded-xl border-slate-300 bg-white/90 px-6 text-[14px] font-semibold text-slate-700 backdrop-blur-sm hover:bg-white sm:h-12 sm:w-auto sm:px-7"
                 asChild
               >
                 <Link href="/register">I&apos;m a Professional</Link>
               </Button>
             </div>
           </div>
-
-          {/* Right — hero visual */}
-          <div className="relative mx-auto w-full max-w-[560px] lg:max-w-none">
-            <div className="pointer-events-none absolute -inset-3 rounded-[28px] bg-gradient-to-br from-indigo-200/40 via-transparent to-violet-200/30 blur-xl" />
-            <div className="relative overflow-hidden rounded-[24px] border border-white/70 bg-white/50 shadow-[0_24px_60px_-20px_rgba(79,70,229,0.35)] backdrop-blur-sm">
-              <Image
-                src="/images/hero/professional-workspace.png"
-                alt="Professional verified through real work — GitHub, Figma, performance data, and client feedback"
-                width={1120}
-                height={900}
-                priority
-                className="h-auto w-full object-cover object-center"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-              />
-            </div>
-            {/* Floating badges echoing mockup integrations */}
-            <div className="pointer-events-none absolute left-2 top-6 hidden rounded-full bg-[#24292f] p-2 text-white shadow-lg sm:block">
-              <GitHubMark className="h-4 w-4" />
-            </div>
-            <div className="pointer-events-none absolute right-4 top-10 hidden rounded-xl border border-slate-200 bg-white/95 px-3 py-2 shadow-lg sm:block">
-              <p className="text-[10px] font-bold text-emerald-600">+22% User Engagement</p>
-            </div>
-            <div className="pointer-events-none absolute bottom-16 left-4 hidden rounded-xl border border-slate-200 bg-white/95 px-3 py-2 shadow-lg sm:block">
-              <p className="text-[10px] font-semibold text-slate-700">4.9/5 client rating</p>
-            </div>
-          </div>
         </div>
 
-        {/* Bottom feature bar */}
-        <div className="mt-10 rounded-2xl border border-white/80 bg-white/80 px-4 py-4 shadow-sm backdrop-blur-md sm:mt-12 sm:px-6 sm:py-5">
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-6">
+        {/* Bottom feature bar — overlays bottom like mockup */}
+        <div className="relative mt-6 rounded-2xl border border-white/80 bg-white/85 px-4 py-4 shadow-sm backdrop-blur-md sm:mt-8 sm:px-6 sm:py-5 lg:ml-auto lg:max-w-[62%]">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-5">
             {FEATURE_BAR.map((item) => (
-              <div key={item.label} className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-brand">
+              <div key={item.label} className="flex items-center gap-2.5 sm:gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-brand sm:h-10 sm:w-10">
                   <item.icon className="h-4 w-4" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[12px] font-bold text-slate-900 sm:text-[13px]">{item.label}</p>
-                  <p className="text-[10px] text-slate-500 sm:text-[11px]">{item.sub}</p>
+                  <p className="text-[11px] font-bold text-slate-900 sm:text-[12px]">{item.label}</p>
+                  <p className="text-[9px] text-slate-500 sm:text-[10px]">{item.sub}</p>
                 </div>
               </div>
             ))}
