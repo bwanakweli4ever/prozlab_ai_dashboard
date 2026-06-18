@@ -1320,6 +1320,55 @@ export const adminApi = {
     )
     return handleResponse<import("@/types/api").SkillVerificationDetail>(response)
   },
+
+  getSpecialtiesAdmin: async (token: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/proz/specialties`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    return handleResponse<import("@/types/api").SpecialtyAdmin[]>(response)
+  },
+
+  createSpecialty: async (
+    token: string,
+    payload: { name: string; description?: string },
+  ) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/proz/specialties`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    })
+    return handleResponse<import("@/types/api").SpecialtyAdmin>(response)
+  },
+
+  updateSpecialty: async (
+    token: string,
+    specialtyId: string,
+    payload: { name?: string; description?: string },
+  ) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/proz/specialties/${specialtyId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    })
+    return handleResponse<import("@/types/api").SpecialtyAdmin>(response)
+  },
+
+  deleteSpecialty: async (token: string, specialtyId: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/proz/specialties/${specialtyId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!response.ok) {
+      const text = await response.text()
+      throw new Error(text || `Delete failed (${response.status})`)
+    }
+  },
 }
 
 export const fraudApi = {
@@ -1838,6 +1887,98 @@ export const taskApi = {
       console.error("Network error while fetching dashboard stats:", error)
       throw new Error("Network error: Could not connect to the API.")
     }
+  },
+
+  getServiceRequestAdminDetail: async (requestId: string, token: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/tasks/admin/service-requests/${requestId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    return handleResponse<import("@/types/api").ServiceRequestAdminDetail>(response)
+  },
+
+  updateServiceRequestAdmin: async (
+    requestId: string,
+    token: string,
+    payload: { status?: string; priority?: string; admin_notes?: string },
+  ) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/tasks/admin/service-requests/${requestId}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    })
+    return handleResponse<import("@/types/api").ServiceRequestResponse>(response)
+  },
+
+  sendServiceRequestMessage: async (
+    requestId: string,
+    token: string,
+    payload: {
+      body: string
+      message_type?: string
+      subject?: string
+      requested_budget_min?: number
+      requested_budget_max?: number
+      requested_days?: number
+      send_email_to_client?: boolean
+    },
+  ) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/tasks/admin/service-requests/${requestId}/messages`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    })
+    return handleResponse<import("@/types/api").ServiceRequestMessage>(response)
+  },
+
+  createServiceRequestProposal: async (
+    requestId: string,
+    token: string,
+    payload: import("@/types/api").ServiceRequestProposalCreatePayload,
+  ) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/tasks/admin/service-requests/${requestId}/proposals`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    })
+    return handleResponse<import("@/types/api").ServiceRequestProposal>(response)
+  },
+
+  uploadServiceRequestProposal: async (
+    requestId: string,
+    token: string,
+    formData: FormData,
+  ) => {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/tasks/admin/service-requests/${requestId}/proposals/upload`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      },
+    )
+    return handleResponse<import("@/types/api").ServiceRequestProposal>(response)
+  },
+
+  sendServiceRequestProposal: async (proposalId: string, token: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/tasks/admin/proposals/${proposalId}/send`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    return handleResponse<import("@/types/api").ServiceRequestProposal>(response)
+  },
+
+  getPublicProposal: async (token: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/tasks/public/proposals/${token}`)
+    return handleResponse<import("@/types/api").ServiceRequestProposal>(response)
   },
 }
 

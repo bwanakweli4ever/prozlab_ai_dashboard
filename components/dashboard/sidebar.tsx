@@ -19,6 +19,7 @@ import {
   Sparkles,
   Wand2,
   ShieldCheck,
+  Tags,
 } from "lucide-react"
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
@@ -90,6 +91,7 @@ export const DashboardSidebar = React.forwardRef<
         { title: "Work Verification", href: "/admin/assessments", icon: ClipboardList, badge: "New" },
         { title: "Fraud Detection", href: "/admin/fraud", icon: ShieldCheck },
         { title: "Task Management", href: "/admin/tasks", icon: Briefcase },
+        { title: "Skills", href: "/admin/specialties", icon: Tags },
         { title: "Users", href: "/admin/users", icon: Users },
         { title: "Settings", href: "/admin/settings", icon: Settings },
       ]

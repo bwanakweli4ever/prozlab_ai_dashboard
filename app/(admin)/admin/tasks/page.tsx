@@ -12,6 +12,7 @@ import { Search, Loader2, Plus, Users, Clock, AlertTriangle, TrendingUp, BarChar
 import { toast } from "@/components/ui/use-toast"
 import { useAuth } from "@/contexts/auth-context"
 import { taskApi, prozProfilesApi } from "@/lib/api"
+import { ServiceRequestDetailDialog } from "@/components/admin/service-request-detail-dialog"
 import toastHot from "react-hot-toast"
 import { toast as toastNotify } from "react-toastify"
 
@@ -45,6 +46,8 @@ export default function AdminTasksPage() {
   const [aiMatching, setAiMatching] = useState(false)
   const [pendingAssignments, setPendingAssignments] = useState<any[]>([])
   const [isAssigning, setIsAssigning] = useState(false)
+  const [detailRequestId, setDetailRequestId] = useState<string | null>(null)
+  const [detailOpen, setDetailOpen] = useState(false)
   const [analyticsData, setAnalyticsData] = useState({
     completionRate: 0,
     averageCompletionTime: 0,
@@ -157,36 +160,9 @@ export default function AdminTasksPage() {
   }
 
   // Button handlers
-  const handleViewDetails = async (requestId: string) => {
-    console.log("🔍 View details button clicked for request:", requestId)
-    
-    // Set loading state
-    setLoadingButtons(prev => ({ ...prev, [`view-${requestId}`]: true }))
-    
-    try {
-      // Simulate API call delay for better UX
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Show success message
-      toast({
-        title: "View Details",
-        description: `Opening details for request ${requestId}`,
-      })
-      
-      // Here you would typically open a modal or navigate to details page
-      console.log("Opening details for request:", requestId)
-      
-    } catch (error) {
-      console.error("Error viewing details:", error)
-      toast({
-        title: "Error",
-        description: "Failed to load request details",
-        variant: "destructive",
-      })
-    } finally {
-      // Clear loading state
-      setLoadingButtons(prev => ({ ...prev, [`view-${requestId}`]: false }))
-    }
+  const handleViewDetails = (requestId: string) => {
+    setDetailRequestId(requestId)
+    setDetailOpen(true)
   }
 
   const handleAssignProfessional = async (requestId: string) => {
@@ -1378,6 +1354,14 @@ export default function AdminTasksPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ServiceRequestDetailDialog
+        requestId={detailRequestId}
+        token={token}
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        onUpdated={() => setRefreshTrigger((prev) => prev + 1)}
+      />
     </div>
   )
 }

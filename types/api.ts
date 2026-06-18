@@ -468,3 +468,81 @@ export interface ProfileStatsResponse {
   average_rating: number
   locations_count: number
 }
+
+export interface SpecialtyAdmin {
+  id: string
+  name: string
+  description?: string | null
+  profiles_count: number
+  created_at?: string
+  updated_at?: string
+}
+
+export interface ProposalLineItem {
+  description: string
+  quantity: number
+  unit_price: number
+  days?: number
+}
+
+export interface ServiceRequestMessage {
+  id: string
+  service_request_id: string
+  author_type: string
+  author_name: string
+  author_email?: string | null
+  message_type: string
+  subject?: string | null
+  body: string
+  requested_budget_min?: number | null
+  requested_budget_max?: number | null
+  requested_days?: number | null
+  email_sent: boolean
+  created_at: string
+}
+
+export interface ServiceRequestProposal {
+  id: string
+  service_request_id: string
+  proposal_type: "dynamic" | "uploaded" | string
+  title: string
+  introduction?: string | null
+  line_items?: ProposalLineItem[] | null
+  subtotal?: number | null
+  tax_rate?: number | null
+  tax_amount?: number | null
+  total?: number | null
+  estimated_days?: number | null
+  budget_amount?: number | null
+  currency: string
+  status: string
+  public_token: string
+  document_url?: string | null
+  notes?: string | null
+  sent_at?: string | null
+  valid_until?: string | null
+  public_url?: string | null
+  created_at: string
+  updated_at?: string | null
+}
+
+export interface ServiceRequestAdminDetail {
+  request: ServiceRequestResponse
+  assignments: TaskAssignmentResponse[]
+  messages: ServiceRequestMessage[]
+  proposals: ServiceRequestProposal[]
+}
+
+export interface ServiceRequestProposalCreatePayload {
+  proposal_type?: "dynamic" | "uploaded"
+  title: string
+  introduction?: string
+  line_items?: ProposalLineItem[]
+  tax_rate?: number
+  estimated_days?: number
+  budget_amount?: number
+  currency?: string
+  notes?: string
+  valid_until?: string
+  document_url?: string
+}
