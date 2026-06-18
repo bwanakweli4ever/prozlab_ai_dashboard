@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import {
   ArrowRight,
@@ -25,9 +26,17 @@ import {
   Instagram,
   Mail,
   Phone,
+  Menu,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { ProzLabLogo } from "@/components/prozlab-logo"
+
+const HERO_LEAD =
+  "Hire proven professionals, not just qualified applicants. Prozlab uses verified work history, performance signals, and intelligent matching to predict who will succeed on the job—not just pass the interview."
+
+const HERO_SUB =
+  "Prozlab predicts hiring success using verified skills, real-world assessments, and performance data."
 
 const navLinks = [
   { label: "For Employers", href: "#employers" },
@@ -71,15 +80,18 @@ function SuccessGauge() {
 }
 
 export function HiringLandingPage() {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+
   return (
-    <div className="landing-page min-h-screen bg-white text-slate-900">
+    <div className="landing-page min-h-screen overflow-x-hidden bg-white text-slate-900">
       {/* ── Header ── */}
       <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/95 backdrop-blur-md">
-        <div className="mx-auto grid h-[72px] max-w-[1200px] grid-cols-[1fr_auto_1fr] items-center gap-4 px-6 lg:px-8">
-          <Link href="/" className="justify-self-start">
+        <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between gap-3 px-4 sm:h-[72px] sm:px-6 lg:px-8">
+          <Link href="/" className="shrink-0">
             <ProzLabLogo size="md" />
           </Link>
-          <nav className="hidden items-center gap-7 lg:flex">
+
+          <nav className="hidden items-center gap-6 xl:gap-7 lg:flex">
             {navLinks.map((link) => (
               <Link
                 key={link.label}
@@ -90,52 +102,91 @@ export function HiringLandingPage() {
               </Link>
             ))}
           </nav>
-          <div className="flex items-center justify-end gap-2">
-            <Link href="/login" className="hidden px-3 py-2 text-[13px] font-medium text-slate-700 hover:text-brand sm:inline-block">
+
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              href="/login"
+              className="hidden px-3 py-2 text-[13px] font-medium text-slate-700 hover:text-brand md:inline-block"
+            >
               Log in
             </Link>
-            <Button className="h-10 rounded-lg bg-brand px-5 text-[13px] font-semibold text-white shadow-sm hover:bg-brand-dark" asChild>
+            <Button
+              className="h-9 rounded-lg bg-brand px-3 text-[12px] font-semibold text-white shadow-sm hover:bg-brand-dark sm:h-10 sm:px-5 sm:text-[13px]"
+              asChild
+            >
               <Link href="/register">Get Started</Link>
             </Button>
+            <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9 border-slate-200 lg:hidden"
+                  aria-label="Open menu"
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[min(100vw-2rem,320px)]">
+                <SheetHeader>
+                  <SheetTitle>Menu</SheetTitle>
+                </SheetHeader>
+                <nav className="mt-6 flex flex-col gap-1">
+                  {navLinks.map((link) => (
+                    <Link
+                      key={link.label}
+                      href={link.href}
+                      onClick={() => setMobileNavOpen(false)}
+                      className="rounded-lg px-3 py-2.5 text-[15px] font-medium text-slate-700 hover:bg-slate-50 hover:text-brand"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileNavOpen(false)}
+                    className="mt-2 rounded-lg px-3 py-2.5 text-[15px] font-medium text-slate-700 hover:bg-slate-50 hover:text-brand md:hidden"
+                  >
+                    Log in
+                  </Link>
+                </nav>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>
 
       <main>
         {/* ── Hero ── */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-[#EEF2FF] via-[#F5F3FF] to-white pb-20 pt-14 lg:pb-24 lg:pt-20">
+        <section className="relative overflow-hidden bg-gradient-to-br from-[#EEF2FF] via-[#F5F3FF] to-white pb-14 pt-10 sm:pb-20 sm:pt-14 lg:pb-24 lg:pt-20">
           <div className="pointer-events-none absolute -right-32 -top-32 h-[500px] w-[500px] rounded-full bg-indigo-200/30 blur-3xl" />
-          <div className="relative mx-auto grid max-w-[1200px] items-center gap-12 px-6 lg:grid-cols-2 lg:gap-10 lg:px-8">
+          <div className="relative mx-auto grid max-w-[1200px] items-center gap-10 px-4 sm:gap-12 sm:px-6 lg:grid-cols-2 lg:gap-10 lg:px-8">
             {/* Left */}
-            <div>
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-white px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.12em] text-brand">
-                <Sparkles className="h-3.5 w-3.5" />
-                Talent Intelligence Platform
+            <div className="min-w-0">
+              <div className="mb-4 inline-flex max-w-full items-center gap-2 rounded-full border border-indigo-200 bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-brand sm:mb-5 sm:px-4 sm:text-[11px] sm:tracking-[0.12em]">
+                <Sparkles className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Talent Intelligence Platform</span>
               </div>
-              <h1 className="text-[2.75rem] font-extrabold leading-[1.08] tracking-tight text-slate-900 lg:text-[3.25rem]">
+              <h1 className="text-[1.875rem] font-extrabold leading-[1.12] tracking-tight text-slate-900 sm:text-[2.5rem] lg:text-[3.25rem] lg:leading-[1.08]">
                 Skills Proven by{" "}
-                <span className="text-brand">Real Work,</span>
-                <br />
+                <span className="text-brand">Real Work,</span>{" "}
                 Not Interviews.
               </h1>
-              <p className="mt-5 max-w-[480px] text-[17px] leading-relaxed text-slate-600">
-                Hire proven professionals, not just qualified applicants. Prozlab uses verified work
-                history, performance signals, and intelligent matching to predict who will succeed on
-                the job—not just pass the interview.
+              <p className="mt-4 text-[15px] leading-relaxed text-slate-600 sm:mt-5 sm:max-w-[480px] sm:text-[17px]">
+                {HERO_LEAD}
               </p>
-              <p className="mt-3 max-w-[480px] text-[14px] leading-relaxed text-slate-500">
-                Prozlab predicts hiring success using verified skills, real-world assessments, and
-                performance data.
+              <p className="mt-2 text-[14px] leading-relaxed text-slate-500 sm:mt-3 sm:max-w-[480px]">
+                {HERO_SUB}
               </p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <Button className="h-12 rounded-lg bg-brand px-7 text-[15px] font-semibold shadow-md shadow-indigo-200 hover:bg-brand-dark" asChild>
+              <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap">
+                <Button className="h-11 w-full rounded-lg bg-brand px-6 text-[14px] font-semibold shadow-md shadow-indigo-200 hover:bg-brand-dark sm:h-12 sm:w-auto sm:px-7 sm:text-[15px]" asChild>
                   <Link href="/register">Hire Proven Professionals</Link>
                 </Button>
-                <Button variant="outline" className="h-12 rounded-lg border-slate-300 bg-white px-7 text-[15px] font-semibold text-slate-700 hover:bg-slate-50" asChild>
+                <Button variant="outline" className="h-11 w-full rounded-lg border-slate-300 bg-white px-6 text-[14px] font-semibold text-slate-700 hover:bg-slate-50 sm:h-12 sm:w-auto sm:px-7 sm:text-[15px]" asChild>
                   <Link href="/register">I&apos;m a Professional</Link>
                 </Button>
               </div>
-              <div className="mt-9 flex items-center gap-4">
+              <div className="mt-7 flex flex-col gap-3 sm:mt-9 sm:flex-row sm:items-center sm:gap-4">
                 <div className="flex -space-x-2.5">
                   {["#6366F1", "#818CF8", "#4F46E5", "#A5B4FC"].map((color, i) => (
                     <div
@@ -161,10 +212,10 @@ export function HiringLandingPage() {
             </div>
 
             {/* Right — Candidate card */}
-            <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_20px_60px_-12px_rgba(99,102,241,0.18)]">
+            <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_20px_60px_-12px_rgba(99,102,241,0.18)]">
               <div className="flex flex-col lg:flex-row">
                 {/* Main content */}
-                <div className="flex-1 p-5 lg:p-6">
+                <div className="flex-1 p-4 sm:p-5 lg:p-6">
                   <div className="flex items-start gap-3.5">
                     <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 ring-2 ring-indigo-100">
                       <span className="text-lg font-bold text-white">SM</span>
@@ -175,9 +226,9 @@ export function HiringLandingPage() {
                       </div>
                       <h3 className="text-[17px] font-bold text-slate-900">Sophia Martinez</h3>
                       <p className="text-[13px] text-slate-500">Senior Product Designer</p>
-                      <div className="mt-0.5 flex items-center gap-1 text-[12px] text-slate-500">
+                      <div className="mt-0.5 flex flex-wrap items-center gap-1 text-[12px] text-slate-500">
                         <MapPin className="h-3 w-3 shrink-0" />
-                        San Francisco, CA · 8+ years experience
+                        <span>San Francisco, CA · 8+ years</span>
                       </div>
                     </div>
                   </div>
@@ -208,7 +259,7 @@ export function HiringLandingPage() {
                     ))}
                   </div>
 
-                  <div className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 sm:grid-cols-4">
+                  <div className="mt-4 grid grid-cols-2 gap-2 border-t border-slate-100 pt-4 sm:grid-cols-4 sm:gap-3">
                     {[
                       { v: "24", l: "Projects Completed" },
                       { v: "18", l: "Clients/Teams Worked With" },
@@ -254,9 +305,9 @@ export function HiringLandingPage() {
         </section>
 
         {/* ── Problem ── */}
-        <section id="why-prozlab" className="py-20 lg:py-24">
-          <div className="mx-auto max-w-[1200px] px-6 lg:px-8">
-            <h2 className="text-center text-[2rem] font-bold tracking-tight text-slate-900 lg:text-[2.25rem]">
+        <section id="why-prozlab" className="py-14 sm:py-20 lg:py-24">
+          <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
+            <h2 className="text-center text-[1.625rem] font-bold tracking-tight text-slate-900 sm:text-[2rem] lg:text-[2.25rem]">
               The problem with traditional hiring
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-center text-[16px] text-slate-600">
@@ -286,9 +337,9 @@ export function HiringLandingPage() {
         </section>
 
         {/* ── How it works ── */}
-        <section id="how-it-works" className="bg-slate-50 py-20 lg:py-24">
-          <div className="mx-auto max-w-[1200px] px-6 lg:px-8">
-            <h2 className="text-center text-[2rem] font-bold tracking-tight text-slate-900 lg:text-[2.25rem]">
+        <section id="how-it-works" className="bg-slate-50 py-14 sm:py-20 lg:py-24">
+          <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
+            <h2 className="text-center text-[1.625rem] font-bold tracking-tight text-slate-900 sm:text-[2rem] lg:text-[2.25rem]">
               How Prozlab ensures better hiring outcomes
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-center text-[16px] text-slate-600">
@@ -317,11 +368,11 @@ export function HiringLandingPage() {
         </section>
 
         {/* ── For Professionals ── */}
-        <section id="candidates" className="border-y border-slate-100 bg-white py-20 lg:py-24">
-          <div className="mx-auto max-w-[1200px] px-6 lg:px-8">
+        <section id="candidates" className="border-y border-slate-100 bg-white py-14 sm:py-20 lg:py-24">
+          <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-2xl text-center">
               <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-brand">For Professionals</p>
-              <h2 className="mt-3 text-[2rem] font-bold tracking-tight text-slate-900 lg:text-[2.25rem]">
+              <h2 className="mt-3 text-[1.625rem] font-bold tracking-tight text-slate-900 sm:text-[2rem] lg:text-[2.25rem]">
                 Get hired for real work—not interview performance
               </h2>
               <p className="mt-3 text-[16px] text-slate-600">
@@ -350,29 +401,29 @@ export function HiringLandingPage() {
         </section>
 
         {/* ── Stats (dark) ── */}
-        <section id="employers" className="py-20 lg:py-24">
-          <div className="mx-auto max-w-[1200px] px-6 lg:px-8">
-            <div className="overflow-hidden rounded-3xl bg-navy p-10 lg:p-14">
-              <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
+        <section id="employers" className="py-14 sm:py-20 lg:py-24">
+          <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
+            <div className="overflow-hidden rounded-2xl bg-navy p-6 sm:rounded-3xl sm:p-10 lg:p-14">
+              <div className="grid items-center gap-8 sm:gap-12 lg:grid-cols-2 lg:gap-16">
                 {/* Left */}
-                <div>
-                  <h2 className="text-[2rem] font-bold leading-tight text-white lg:text-[2.25rem]">
+                <div className="min-w-0">
+                  <h2 className="text-[1.5rem] font-bold leading-tight text-white sm:text-[2rem] lg:text-[2.25rem]">
                     Talent intelligence that predicts on-the-job success
                   </h2>
                   <p className="mt-4 text-[15px] leading-relaxed text-slate-400">
                     Not another job board. Hire based on verified work, performance signals, and proof.
                   </p>
-                  <div className="mt-8 flex flex-wrap gap-3">
-                    <Button className="h-11 rounded-lg bg-brand px-6 font-semibold hover:bg-brand-dark" asChild>
+                  <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap">
+                    <Button className="h-11 w-full rounded-lg bg-brand px-6 font-semibold hover:bg-brand-dark sm:h-11 sm:w-auto" asChild>
                       <Link href="/register">Hire Proven Professionals</Link>
                     </Button>
-                    <Button variant="outline" className="h-11 rounded-lg border-white/25 bg-transparent px-6 font-semibold text-white hover:bg-white/10" asChild>
+                    <Button variant="outline" className="h-11 w-full rounded-lg border-white/25 bg-transparent px-6 font-semibold text-white hover:bg-white/10 sm:h-11 sm:w-auto" asChild>
                       <Link href="#contact">Book a Demo</Link>
                     </Button>
                   </div>
                 </div>
                 {/* Right — 2×2 stat cards */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   {[
                     { icon: Target, value: "87%", label: "90-day success rate for matched hires" },
                     { icon: Timer, value: "2.5x", label: "Faster time to hire vs. traditional methods" },
@@ -392,9 +443,9 @@ export function HiringLandingPage() {
         </section>
 
         {/* ── Testimonials ── */}
-        <section id="resources" className="py-20 lg:py-24">
-          <div className="mx-auto max-w-[1200px] px-6 lg:px-8">
-            <h2 className="text-center text-[2rem] font-bold tracking-tight text-slate-900 lg:text-[2.25rem]">
+        <section id="resources" className="py-14 sm:py-20 lg:py-24">
+          <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
+            <h2 className="text-center text-[1.625rem] font-bold tracking-tight text-slate-900 sm:text-[2rem] lg:text-[2.25rem]">
               What our customers are saying
             </h2>
             <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -427,16 +478,15 @@ export function HiringLandingPage() {
         </section>
 
         {/* ── Final CTA ── */}
-        <section id="contact" className="pb-20 lg:pb-24">
-          <div className="mx-auto max-w-[1200px] px-6 lg:px-8">
-            <div className="grid items-center gap-10 rounded-3xl bg-slate-50 px-8 py-12 lg:grid-cols-2 lg:gap-16 lg:px-14 lg:py-14">
-              <div>
-                <h2 className="text-[1.75rem] font-bold leading-tight text-slate-900 lg:text-[2rem]">
+        <section id="contact" className="pb-14 sm:pb-20 lg:pb-24">
+          <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
+            <div className="grid items-center gap-8 rounded-2xl bg-slate-50 px-5 py-10 sm:rounded-3xl sm:px-8 sm:py-12 lg:grid-cols-2 lg:gap-16 lg:px-14 lg:py-14">
+              <div className="min-w-0">
+                <h2 className="text-[1.5rem] font-bold leading-tight text-slate-900 sm:text-[1.75rem] lg:text-[2rem]">
                   Hire proven professionals—not just qualified applicants
                 </h2>
-                <p className="mt-3 text-[14px] text-slate-600">
-                  Prozlab predicts hiring success using verified skills, real-world assessments, and
-                  performance data.
+                <p className="mt-3 text-[14px] leading-relaxed text-slate-600">
+                  {HERO_SUB}
                 </p>
                 <ul className="mt-6 space-y-3">
                   {["Work-verified professionals", "Predictive success matching", "Real-world performance data"].map((item) => (
@@ -449,14 +499,14 @@ export function HiringLandingPage() {
                   ))}
                 </ul>
               </div>
-              <div className="flex flex-col gap-3 sm:flex-row lg:justify-end">
-                <Button className="h-12 flex-1 rounded-lg bg-brand px-8 text-[15px] font-semibold shadow-md shadow-indigo-200 hover:bg-brand-dark lg:flex-none" asChild>
+              <div className="flex flex-col gap-3 sm:flex-row lg:flex-col xl:flex-row lg:justify-end">
+                <Button className="h-11 w-full rounded-lg bg-brand px-6 text-[14px] font-semibold shadow-md shadow-indigo-200 hover:bg-brand-dark sm:h-12 sm:px-8 sm:text-[15px] lg:w-full xl:w-auto" asChild>
                   <Link href="/register">
                     Hire Proven Professionals
                     <ArrowRight className="ml-1.5 h-4 w-4" />
                   </Link>
                 </Button>
-                <Button variant="outline" className="h-12 flex-1 rounded-lg border-slate-300 bg-white px-8 text-[15px] font-semibold lg:flex-none" asChild>
+                <Button variant="outline" className="h-11 w-full rounded-lg border-slate-300 bg-white px-6 text-[14px] font-semibold sm:h-12 sm:px-8 sm:text-[15px] lg:w-full xl:w-auto" asChild>
                   <Link href="#contact">Book a Demo</Link>
                 </Button>
               </div>
@@ -467,14 +517,13 @@ export function HiringLandingPage() {
 
       {/* ── Footer ── */}
       <footer className="border-t border-slate-100 bg-white">
-        <div className="mx-auto max-w-[1200px] px-6 py-14 lg:px-8">
-          <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-5">
-            <div className="lg:col-span-2">
+        <div className="mx-auto max-w-[1200px] px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-10 lg:grid-cols-5">
+            <div className="sm:col-span-2 lg:col-span-2">
               <Link href="/"><ProzLabLogo size="md" /></Link>
               <p className="mt-3 text-[14px] font-medium text-brand">Skills Proven by Real Work, Not Interviews</p>
               <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-slate-500">
-                A talent intelligence platform that predicts hiring success using verified skills,
-                real-world assessments, and performance data.
+                {HERO_SUB}
               </p>
               <div className="mt-5 flex gap-3">
                 {[Linkedin, Twitter, Youtube, Instagram].map((Icon, i) => (
@@ -517,13 +566,13 @@ export function HiringLandingPage() {
             ))}
           </div>
 
-          <div className="mt-12 flex flex-col items-start justify-between gap-4 border-t border-slate-100 pt-8 lg:flex-row lg:items-center">
-            <div className="flex flex-wrap items-center gap-4 text-[12px] text-slate-500">
+          <div className="mt-10 flex flex-col items-start justify-between gap-4 border-t border-slate-100 pt-6 sm:mt-12 sm:pt-8 lg:flex-row lg:items-center">
+            <div className="flex flex-col gap-2 text-[12px] text-slate-500 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
               <span className="flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" /> info@prozlab.com</span>
               <span className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" /> (800) 555-1234</span>
             </div>
             <p className="text-[12px] text-slate-400">&copy; {new Date().getFullYear()} Prozlab. All rights reserved.</p>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <span className="rounded-md bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-500">GDPR</span>
               <span className="rounded-md bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-500">SSL Secured</span>
               <span className="text-[12px] text-slate-400">Made with ❤️ for professionals</span>

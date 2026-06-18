@@ -25,7 +25,7 @@ const raleway = Raleway({
 export const metadata: Metadata = {
   title: "Prozlab — Skills Proven by Real Work, Not Interviews",
   description:
-    "Prozlab predicts hiring success using verified skills, real-world assessments, and performance data—helping employers hire proven professionals who actually succeed on the job.",
+    "Prozlab predicts hiring success using verified skills, real-world assessments, and performance data.",
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: 'any' },
