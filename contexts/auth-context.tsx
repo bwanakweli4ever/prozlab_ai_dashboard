@@ -52,23 +52,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // Handle redirect after user data is loaded
-  useEffect(() => {
-    if (!isLoading && user && token) {
-      // Check if we're currently on an auth page (login, register, forgot-password, reset-password)
-      const currentPath = window.location.pathname
-      const isOnRegisterWizard = ["/register", "/onboarding-wizard"].includes(currentPath)
-
-      // Let the registration wizard show its completion step before redirecting
-      if (isOnRegisterWizard) return
-
-      if (user.is_superuser) {
-        router.push("/admin")
-      } else {
-        router.push("/dashboard")
-      }
-    }
-  }, [user, token, isLoading, router])
+  // No global redirect here: it ran on every page load and sent signed-in users back to
+  // /admin or /dashboard from any page. The pages a signed-in user should leave (home, login,
+  // forgot/reset password) and the area layouts redirect on their own.
 
   const fetchUser = async (authToken: string) => {
     try {

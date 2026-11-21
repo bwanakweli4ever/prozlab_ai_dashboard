@@ -7,13 +7,13 @@ import { ItServicesLandingPage } from "@/components/it-services-landing-page"
 
 export default function HomePage() {
   const router = useRouter()
-  const { isAuthenticated, isLoading } = useAuth()
+  const { user, isAuthenticated, isLoading } = useAuth()
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.push("/dashboard")
+      router.replace(user?.is_superuser ? "/admin" : "/dashboard")
     }
-  }, [isAuthenticated, isLoading, router])
+  }, [isAuthenticated, isLoading, router, user])
 
   return <ItServicesLandingPage />
 }

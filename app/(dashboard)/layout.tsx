@@ -13,16 +13,20 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { isAuthenticated, isLoading } = useAuth()
+  const { user, isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
   const sidebarRef = React.useRef<{ openMobileMenu: () => void }>(null)
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (isLoading) return
+    if (!isAuthenticated) {
       router.replace("/")
+    } else if (user?.is_superuser) {
+      // Admins work in /admin; the professional dashboard isn't theirs
+      router.replace("/admin")
     }
-  }, [isAuthenticated, isLoading, router])
+  }, [isAuthenticated, isLoading, router, user])
 
   if (isLoading) {
     return (
@@ -32,7 +36,7 @@ export default function DashboardLayout({
     )
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || user?.is_superuser) {
     return null // Will redirect in useEffect
   }
 
