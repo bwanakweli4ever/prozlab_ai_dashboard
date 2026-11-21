@@ -431,6 +431,13 @@ export const authApi = {
 }
 
 // Email Verification API (the OTP functionality is under email verification in the spec)
+export interface EmailTestResult {
+  success: boolean
+  provider: string
+  sent_to: string
+  message: string
+}
+
 export const emailApi = {
   getStatus: async (): Promise<any> => {
     try {
@@ -440,6 +447,25 @@ export const emailApi = {
       console.error("Network error while fetching email status:", error)
       throw new Error("Network error: Could not connect to the API.")
     }
+  },
+
+  /** Admin only: sends a test email (to `email`, or to the signed-in admin when omitted). */
+  sendTestEmail: async (token: string, email?: string): Promise<EmailTestResult> => {
+    let response: Response
+    try {
+      response = await fetch(`${API_BASE_URL}/api/v1/auth/email/test`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(email ? { email } : {}),
+      })
+    } catch (error) {
+      console.error("Network error while sending test email:", error)
+      throw new Error("Network error: Could not connect to the API.")
+    }
+    return handleResponse<EmailTestResult>(response)
   },
 
   sendVerification: async (data: EmailVerificationRequest): Promise<EmailVerificationResponse> => {

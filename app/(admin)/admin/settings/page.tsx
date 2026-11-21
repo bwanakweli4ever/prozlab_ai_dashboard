@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
+import { EmailDeliveryCard } from "@/components/admin/email-delivery-card"
 
 export default function AdminSettingsPage() {
   return (
@@ -19,10 +20,15 @@ export default function AdminSettingsPage() {
       <Tabs defaultValue="general" className="space-y-4">
         <TabsList>
           <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="email">Email</TabsTrigger>
           <TabsTrigger value="verification">Verification</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="email" className="space-y-4">
+          <EmailDeliveryCard />
+        </TabsContent>
 
         <TabsContent value="general" className="space-y-4">
           <Card>
