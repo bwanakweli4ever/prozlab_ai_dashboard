@@ -159,11 +159,7 @@ function RequestServiceSuccessContent() {
                   <p className="font-semibold text-amber-900">Important Note</p>
                   <p className="mt-1 text-[13px] leading-relaxed text-amber-800">
                     You will receive an email confirmation shortly. Please check your spam folder if you
-                    don&apos;t see it in your inbox. Questions? Email{" "}
-                    <a href="mailto:support@prozlab.com" className="font-semibold text-amber-900 underline">
-                      support@prozlab.com
-                    </a>
-                    .
+                    don&apos;t see it in your inbox. Questions? Just reply to that email.
                   </p>
                 </div>
               </div>

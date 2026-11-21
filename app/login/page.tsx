@@ -102,7 +102,7 @@ export default function LoginPage() {
       return "Cannot reach the server. Check your connection and that the backend is running."
     }
     if (/suspended|policy violation|banned/i.test(message)) {
-      return "Your account has been suspended. Contact support@prozlab.com if you believe this is an error."
+      return "Your account has been suspended. If you believe this is an error, reply to any email you've received from Prozlab."
     }
     return message
   }

@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Hide the Next.js dev badge so local previews match what visitors see.
+  devIndicators: false,
   eslint: {
     ignoreDuringBuilds: true,
   },

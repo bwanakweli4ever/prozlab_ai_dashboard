@@ -119,7 +119,7 @@ export default function PublicProposalPage({ params }: { params: Promise<{ token
             )}
 
             <p className="text-[12px] text-slate-400">
-              Questions? Reply to your Prozlab contact or email info@prozlab.com
+              Questions? Reply to your Prozlab contact.
             </p>
           </CardContent>
         </Card>

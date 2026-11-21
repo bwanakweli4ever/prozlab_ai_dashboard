@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowLeft, FileText, Scale, Users, Shield, AlertTriangle, CheckCircle, Clock, DollarSign, Phone } from "lucide-react"
+import { ArrowLeft, FileText, Scale, Users, Shield, AlertTriangle, CheckCircle, Clock, DollarSign } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -229,13 +229,11 @@ export default function TermsOfServicePage() {
                 If you have any questions about these Terms of Service, please contact our legal team.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                  <FileText className="w-4 h-4 mr-2" />
-                  info@prozlab.com
-                </Button>
-                <Button variant="outline">
-                  <Phone className="w-4 h-4 mr-2" />
-                  +1 (555) 123-4567
+                <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <a href="/request-service">
+                    <FileText className="w-4 h-4 mr-2" />
+                    Contact us
+                  </a>
                 </Button>
               </div>
             </CardContent>

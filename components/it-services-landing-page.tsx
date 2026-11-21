@@ -2,18 +2,19 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { ArrowRight, Menu } from "lucide-react"
+import { ArrowRight, ArrowUpRight, Check, Menu } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { ProzLabLogo } from "@/components/prozlab-logo"
 import { ServiceDeskPreview } from "@/components/landing/service-desk-preview"
 import { FieldExpertsSection } from "@/components/landing/field-experts"
-import { PROCESS_STEPS, SERVICES } from "@/components/landing/it-services-content"
+import { CASE_STUDIES, PROCESS_STEPS, SERVICES } from "@/components/landing/it-services-content"
 import { BOOK_DEMO_URL } from "@/lib/constants"
 
 const navLinks = [
   { label: "Services", href: "#services" },
+  { label: "Our work", href: "#work" },
   { label: "Field experts", href: "#experts" },
   { label: "How it works", href: "#how-it-works" },
 ]
@@ -87,8 +88,8 @@ export function ItServicesLandingPage() {
                 <span className="block text-brand">minus the hiring.</span>
               </h1>
               <p className="mt-5 max-w-lg text-[18px] leading-relaxed text-slate-600">
-                Help desk, networks, security, websites and AI for US businesses with 5 to 100 people. One monthly
-                plan, and experts on site when needed.
+                IT support, networks, security, websites and custom software for businesses across the US. One team
+                for all of it, with experts on site when needed.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <Button asChild className="h-12 rounded-lg bg-brand px-6 text-[15px] font-semibold hover:bg-brand-dark">
@@ -117,16 +118,60 @@ export function ItServicesLandingPage() {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
               <h2 className="text-[1.9rem] font-bold tracking-tight sm:text-[2.4rem]">What we handle</h2>
               <p className="max-w-md text-[15px] text-slate-500">
-                Day-to-day IT on one monthly plan. Bigger work as fixed-price projects.
+                Day-to-day IT on one monthly plan. Websites, software and bigger work as fixed-price projects.
               </p>
             </div>
-            <ul className="mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-slate-200 bg-slate-200 lg:grid-cols-4">
+            <ul className="mt-10 grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-slate-200 bg-slate-200 sm:grid-cols-3">
               {SERVICES.map(({ icon: Icon, title, note }) => (
                 <li key={title} className="flex min-w-0 flex-col gap-4 bg-white p-5 sm:p-6">
                   <Icon className="h-6 w-6 text-brand" aria-hidden />
                   <div className="min-w-0">
                     <p className="text-[16px] font-semibold text-slate-900">{title}</p>
                     <p className="mt-1 text-[14px] text-slate-500">{note}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* ── Our work ── */}
+        <section id="work" className="scroll-mt-20 border-t border-slate-100 bg-slate-50 py-16 sm:py-24">
+          <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <h2 className="text-[1.9rem] font-bold tracking-tight sm:text-[2.4rem]">Work we&apos;ve done</h2>
+              <p className="max-w-md text-[15px] text-slate-500">Websites, software and apps we&apos;ve built for our clients.</p>
+            </div>
+            <ul className="mt-10 grid gap-6 md:grid-cols-2">
+              {CASE_STUDIES.map((study) => (
+                <li key={study.client} className="flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                    <h3 className="text-[22px] font-bold text-slate-900">{study.client}</h3>
+                    <a
+                      href={study.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-[14px] font-medium text-brand hover:underline"
+                    >
+                      {study.domain} <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
+                    </a>
+                  </div>
+                  <p className="mt-2 text-[15px] leading-relaxed text-slate-600">{study.about}</p>
+                  <p className="mt-6 text-[12px] font-bold uppercase tracking-[0.14em] text-slate-400">What we built</p>
+                  <ul className="mt-3 space-y-2">
+                    {study.built.map((item) => (
+                      <li key={item} className="flex gap-2 text-[15px] text-slate-800">
+                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-6 flex flex-wrap gap-2 border-t border-slate-100 pt-5">
+                    {study.tags.map((tag) => (
+                      <span key={tag} className="rounded-full bg-slate-100 px-3 py-1 text-[12.5px] font-medium text-slate-600">
+                        {tag}
+                      </span>
+                    ))}
                   </div>
                 </li>
               ))}
@@ -179,9 +224,7 @@ export function ItServicesLandingPage() {
             <Link href="/privacy" className="hover:text-slate-900">Privacy</Link>
             <Link href="/terms" className="hover:text-slate-900">Terms</Link>
           </nav>
-          <p>
-            <span className="select-all">info@prozlab.com</span> · &copy; {new Date().getFullYear()} Prozlab Consulting
-          </p>
+          <p>&copy; {new Date().getFullYear()} Prozlab Consulting</p>
         </div>
       </footer>
     </div>

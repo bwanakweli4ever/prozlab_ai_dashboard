@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowLeft, Shield, Lock, Eye, Database, Users, Globe, CheckCircle, Mail, Phone, Cookie } from "lucide-react"
+import { ArrowLeft, Shield, Lock, Eye, Database, Users, Globe, CheckCircle, Mail, Cookie } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -200,13 +200,11 @@ export default function PrivacyPolicyPage() {
                 If you have any questions about this Privacy Policy or how we handle your data, please contact us.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                  <Mail className="w-4 h-4 mr-2" />
-                  info@prozlab.com
-                </Button>
-                <Button variant="outline">
-                  <Phone className="w-4 h-4 mr-2" />
-                  +1 (555) 123-4567
+                <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <a href="/request-service">
+                    <Mail className="w-4 h-4 mr-2" />
+                    Contact us
+                  </a>
                 </Button>
               </div>
             </CardContent>
