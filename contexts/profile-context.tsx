@@ -4,6 +4,7 @@ import type React from "react"
 import { createContext, useState, useEffect, useContext, useCallback, useMemo } from "react"
 import { prozApi } from "@/lib/api"
 import { normalizeMediaUrl } from "@/lib/utils"
+import { clearPendingOnboarding, peekPendingOnboarding } from "@/lib/pending-onboarding"
 import { useAuth } from "./auth-context"
 import type { ProzProfileCreate, ProzProfileResponse, ProzProfileUpdate } from "@/types/api"
 
@@ -55,7 +56,19 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     setIsLoading(true)
     try {
-      const profileData = await prozApi.getOwnProfile(token)
+      let profileData = await prozApi.getOwnProfile(token)
+
+      // First sign-in after verifying email: create the profile from the saved sign-up answers.
+      const pending = !profileData && user?.email ? peekPendingOnboarding(user.email) : null
+      if (pending) {
+        try {
+          profileData = await prozApi.registerProfile(pending, token)
+          clearPendingOnboarding()
+        } catch (createError) {
+          console.warn("Could not create the profile from saved sign-up answers:", createError)
+        }
+      }
+
       setProfile(profileData ? normalizeProfileMedia(profileData) : null)
       setError(null)
     } catch (error) {
@@ -75,7 +88,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } finally {
       setIsLoading(false)
     }
-  }, [token, user?.is_superuser])
+  }, [token, user?.is_superuser, user?.email])
 
   const createProfile = useCallback(async (profileData: ProzProfileCreate): Promise<ProzProfileResponse> => {
     if (!token) {

@@ -20,6 +20,7 @@ import {
   TrendingUp,
   Star,
   AlertCircle,
+  MailCheck,
 } from "lucide-react"
 import toastHot from "react-hot-toast"
 import { toast as toastNotify } from "react-toastify"
@@ -34,7 +35,9 @@ import { useAuth } from "@/contexts/auth-context"
 import { useProfile } from "@/contexts/profile-context"
 import { toast } from "@/components/ui/use-toast"
 import { EXPERIENCE_LEVELS } from "@/lib/constants"
-import { prozApi } from "@/lib/api"
+import { emailApi, prozApi } from "@/lib/api"
+import { savePendingOnboarding } from "@/lib/pending-onboarding"
+import type { ProzProfileCreate } from "@/types/api"
 import {
   OnboardingShell,
   OnboardingCard,
@@ -94,6 +97,10 @@ export function RegisterWizard() {
   const [specialtiesLoading, setSpecialtiesLoading] = useState(true)
   const [specialtiesError, setSpecialtiesError] = useState<string | null>(null)
   const [signupError, setSignupError] = useState<string | null>(null)
+  /** Set when the account was created but the email must be verified before signing in. */
+  const [verificationEmail, setVerificationEmail] = useState<string | null>(null)
+  const [resendingVerification, setResendingVerification] = useState(false)
+  const [resendMessage, setResendMessage] = useState<string | null>(null)
 
   const loadSpecialties = useCallback(async () => {
     setSpecialtiesLoading(true)
@@ -170,47 +177,76 @@ export function RegisterWizard() {
   const isDuplicateEmailError = (message: string) =>
     /already exists|email.*registered|duplicate/i.test(message)
 
+  const buildProfilePayload = (values: SignupValues): ProzProfileCreate | null => {
+    const onboardingDataStr = sessionStorage.getItem("onboardingData")
+    if (!onboardingDataStr) return null
+    const onboardingData = JSON.parse(onboardingDataStr)
+    const experienceMapping: Record<string, number> = {
+      "0-1 years": 0.5,
+      "1-3 years": 2,
+      "3-5 years": 4,
+      "5+ years": 7,
+    }
+    return {
+      first_name: values.firstName,
+      last_name: values.lastName,
+      email: values.email,
+      phone_number: formData.phoneNumber || "",
+      bio: onboardingData.bio || "Professional looking to provide quality services",
+      location: "Remote",
+      years_experience: experienceMapping[onboardingData.experience] || 1,
+      hourly_rate: 50,
+      availability: onboardingData.availability || "full-time",
+      education: (onboardingData.skills || []).join(", ") || "Self-taught",
+      certifications: (onboardingData.skills || []).join(", ") || "",
+      website: onboardingData.portfolio?.[0] || "",
+      linkedin: "",
+      preferred_contact_method: "email",
+    }
+  }
+
+  const resendVerification = async () => {
+    if (!verificationEmail) return
+    setResendingVerification(true)
+    setResendMessage(null)
+    try {
+      await emailApi.requestVerification(verificationEmail)
+      setResendMessage("Sent. Check your inbox and spam folder.")
+    } catch (error) {
+      setResendMessage(error instanceof Error ? error.message : "Could not send the email. Try again in a minute.")
+    } finally {
+      setResendingVerification(false)
+    }
+  }
+
   const onSubmitSignup = async (values: SignupValues) => {
     setLoading(true)
     setSignupError(null)
     signupForm.clearErrors("email")
     try {
       saveOnboardingData()
-      await authRegister({
+      const profilePayload = buildProfilePayload(values)
+      const result = await authRegister({
         email: values.email,
         password: values.password,
         first_name: values.firstName,
         last_name: values.lastName,
       })
 
+      if (result.status === "verification_required") {
+        // Keep the wizard answers; the profile is created on this account's first sign-in.
+        if (profilePayload) savePendingOnboarding(values.email, profilePayload)
+        sessionStorage.removeItem("onboardingData")
+        setVerificationEmail(values.email)
+        setCurrentStep(8)
+        return
+      }
+
       toast({ title: "Registration successful", description: "Setting up your profile..." })
 
-      const onboardingDataStr = sessionStorage.getItem("onboardingData")
-      if (onboardingDataStr) {
-        const onboardingData = JSON.parse(onboardingDataStr)
-        const experienceMapping: Record<string, number> = {
-          "0-1 years": 0.5,
-          "1-3 years": 2,
-          "3-5 years": 4,
-          "5+ years": 7,
-        }
+      if (profilePayload) {
         try {
-          await createProfile({
-            first_name: values.firstName,
-            last_name: values.lastName,
-            email: values.email,
-            phone_number: formData.phoneNumber || "",
-            bio: onboardingData.bio || "Professional looking to provide quality services",
-            location: "Remote",
-            years_experience: experienceMapping[onboardingData.experience] || 1,
-            hourly_rate: 50,
-            availability: onboardingData.availability || "full-time",
-            education: (onboardingData.skills || []).join(", ") || "Self-taught",
-            certifications: (onboardingData.skills || []).join(", ") || "",
-            website: onboardingData.portfolio?.[0] || "",
-            linkedin: "",
-            preferred_contact_method: "email",
-          } as any)
+          await createProfile(profilePayload)
           sessionStorage.removeItem("onboardingData")
         } catch {
           /* profile creation optional */
@@ -625,6 +661,39 @@ export function RegisterWizard() {
         )
 
       case 8:
+        if (verificationEmail) {
+          return (
+            <OnboardingCard className="bg-gradient-to-b from-brand-light/60 to-white">
+              <div className="text-center">
+                <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-brand/10">
+                  <MailCheck className="h-10 w-10 text-brand" />
+                </div>
+                <h2 className="text-[22px] font-bold text-slate-900">Check your email</h2>
+                <p className="mx-auto mt-3 max-w-sm text-[14px] leading-relaxed text-slate-600">
+                  Your account is created. We sent a verification link to{" "}
+                  <span className="font-semibold text-slate-900">{verificationEmail}</span>. Verify your email, then
+                  sign in to finish your profile. Your answers are saved.
+                </p>
+                <OnboardingPrimaryBtn onClick={() => router.push("/login")}>
+                  Go to sign in <ArrowRight className="h-4 w-4" />
+                </OnboardingPrimaryBtn>
+                <button
+                  type="button"
+                  onClick={resendVerification}
+                  disabled={resendingVerification}
+                  className="mt-3 text-[13px] font-medium text-brand hover:underline disabled:opacity-50"
+                >
+                  {resendingVerification ? "Sending…" : "Resend verification email"}
+                </button>
+                {resendMessage && (
+                  <p role="status" className="mt-2 text-[12.5px] text-slate-500">
+                    {resendMessage}
+                  </p>
+                )}
+              </div>
+            </OnboardingCard>
+          )
+        }
         return (
           <OnboardingCard className="bg-gradient-to-b from-brand-light/60 to-white">
             <div className="text-center">

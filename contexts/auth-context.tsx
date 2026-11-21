@@ -4,7 +4,11 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { useRouter } from "next/navigation"
 import { authApi } from "@/lib/api"
 import { isAuthErrorPayload } from "@/lib/api-errors"
+import { isEmailVerificationRequired } from "@/lib/pending-onboarding"
 import type { User, UserLogin, UserCreate } from "@/types/api"
+
+/** "verification_required": the account exists, but the API allows sign-in only after the email is verified. */
+export type RegisterResult = { status: "signed_in" } | { status: "verification_required" }
 
 interface AuthContextType {
   user: User | null
@@ -12,7 +16,7 @@ interface AuthContextType {
   isLoading: boolean
   isAuthenticated: boolean
   login: (credentials: UserLogin) => Promise<void>
-  register: (userData: UserCreate) => Promise<void>
+  register: (userData: UserCreate) => Promise<RegisterResult>
   logout: () => void
 }
 
@@ -139,17 +143,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const register = async (userData: UserCreate) => {
+  const register = async (userData: UserCreate): Promise<RegisterResult> => {
     setIsLoading(true)
     try {
       await authApi.register(userData)
       // After registration, log the user in with remember_me set to false by default
       // The login function will handle the redirect based on user role
-      await login({
-        email: userData.email,
-        password: userData.password,
-        remember_me: false,
-      })
+      try {
+        await login({
+          email: userData.email,
+          password: userData.password,
+          remember_me: false,
+        })
+        return { status: "signed_in" }
+      } catch (loginError) {
+        // The account was created; the API only allows sign-in after the email is verified.
+        if (isEmailVerificationRequired(loginError)) return { status: "verification_required" }
+        throw loginError
+      }
     } catch (error) {
       console.error("Registration failed:", error)
       throw error
