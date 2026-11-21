@@ -3,7 +3,7 @@
 import { useAuth } from "@/contexts/auth-context"
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { HiringLandingPage } from "@/components/hiring-landing-page"
+import { ItServicesLandingPage } from "@/components/it-services-landing-page"
 
 export default function HomePage() {
   const router = useRouter()
@@ -15,5 +15,5 @@ export default function HomePage() {
     }
   }, [isAuthenticated, isLoading, router])
 
-  return <HiringLandingPage />
+  return <ItServicesLandingPage />
 }
