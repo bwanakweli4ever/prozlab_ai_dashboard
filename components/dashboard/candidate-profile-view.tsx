@@ -30,6 +30,7 @@ import { useProfile } from "@/contexts/profile-context"
 import type { ProzProfileResponse } from "@/types/api"
 import { cn, getProfileImageUrl } from "@/lib/utils"
 import { computeProfileCompletion, profileChecklist } from "@/lib/profile-completion"
+import { EducationCard } from "@/components/dashboard/education-card"
 
 type ExtendedProfile = ProzProfileResponse & {
   skills?: string[]
@@ -720,13 +721,15 @@ export function CandidateProfileView({ profile, onEdit, readOnly = false }: Cand
               <p className="text-[15px] font-bold text-slate-900">{latestRole}</p>
               <p className="mt-0.5 text-[14px] font-semibold text-brand">{latestCompany}</p>
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-slate-500">
-                <span className="capitalize">{profile.availability?.replace(/-/g, " ") || "Full-time"}</span>
-                <span>·</span>
-                <span>
-                  {profile.years_experience
-                    ? `${new Date().getFullYear() - (profile.years_experience || 0)} – Present`
-                    : "2021 – Present"}
-                </span>
+                {profile.availability && (
+                  <span className="capitalize">{profile.availability.replace(/-/g, " ")}</span>
+                )}
+                {(profile.years_experience ?? 0) > 0 && (
+                  <>
+                    {profile.availability && <span>·</span>}
+                    <span>{profile.years_experience}+ years</span>
+                  </>
+                )}
                 {profile.location && (
                   <>
                     <span>·</span>
@@ -738,31 +741,21 @@ export function CandidateProfileView({ profile, onEdit, readOnly = false }: Cand
                 )}
               </div>
               <ul className="mt-3 space-y-2">
-                {(bioBullets.length > 0
-                  ? bioBullets
-                  : [
-                      "Led end-to-end product delivery across frontend, backend, and cloud infrastructure.",
-                      "Collaborated with cross-functional teams to ship features that improved user engagement.",
-                      "Mentored junior developers and established engineering best practices.",
-                    ]
-                ).map((bullet, i) => (
+                {bioBullets.length === 0 && (
+                  <li className="text-[13px] text-slate-500">No experience details yet.</li>
+                )}
+                {bioBullets.map((bullet, i) => (
                   <li key={i} className="flex gap-2 text-[13px] leading-relaxed text-slate-600">
                     <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-slate-400" />
                     {bullet}
                   </li>
                 ))}
               </ul>
-              {profile.education && profile.education.length > 40 && (
-                <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50/80 p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Education</p>
-                  <p className="mt-2 break-words text-[13px] leading-relaxed text-slate-600 whitespace-pre-line">
-                    {profile.education}
-                  </p>
-                </div>
-              )}
             </div>
           </div>
         </div>
+
+        <EducationCard education={profile.education} certifications={profile.certifications} fullName={fullName} />
       </div>
 
       {/* ── Right sidebar ── */}
