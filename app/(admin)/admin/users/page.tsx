@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import Link from "next/link"
-import { Search, Loader2, MoreHorizontal, Edit, Save, Send, X, Trash2, ChevronLeft, ChevronRight, ShieldAlert } from "lucide-react"
+import { Search, Loader2, MoreHorizontal, Edit, Save, Send, X, Trash2, ChevronLeft, ChevronRight, ShieldAlert, Star } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { toast } from "@/components/ui/use-toast"
@@ -25,6 +25,7 @@ export default function AdminUsersPage() {
   const { token } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [isMessageOpen, setIsMessageOpen] = useState(false)
+  const [isFeaturing, setIsFeaturing] = useState(false)
   const [resendingFor, setResendingFor] = useState<string | null>(null)
   const [users, setUsers] = useState<User[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -66,6 +67,30 @@ export default function AdminUsersPage() {
         specialties: profile.specialties || []
       })
       setIsEditMode(true)
+    }
+  }
+
+  const handleToggleFeatured = async () => {
+    if (!profile || !token) return
+    const next = !profile.is_featured
+    try {
+      setIsFeaturing(true)
+      await adminApi.toggleProfileFeatured(profile.id, next, token)
+      setProfile({ ...profile, is_featured: next })
+      toast({
+        title: next ? "Featured on /proz" : "Removed from /proz",
+        description: next
+          ? `${profile.first_name} now shows on the public experts page.`
+          : `${profile.first_name} no longer shows on the public experts page.`,
+      })
+    } catch (error) {
+      toast({
+        title: "Couldn't update",
+        description: error instanceof Error ? error.message : "Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsFeaturing(false)
     }
   }
 
@@ -567,6 +592,35 @@ export default function AdminUsersPage() {
                     <Send className="mr-2 h-4 w-4" />
                     Message
                   </Button>
+                  {profile.verification_status === "verified" ? (
+                    <Button
+                      onClick={handleToggleFeatured}
+                      disabled={isFeaturing}
+                      size="sm"
+                      variant="outline"
+                      className={
+                        profile.is_featured
+                          ? "border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100"
+                          : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                      }
+                    >
+                      {isFeaturing ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Star className={`mr-2 h-4 w-4 ${profile.is_featured ? "fill-amber-400 text-amber-500" : ""}`} />
+                      )}
+                      {profile.is_featured ? "Featured · Remove" : "Feature on /proz"}
+                    </Button>
+                  ) : (
+                    <Link
+                      href="/admin/verifications"
+                      title="Only verified profiles can be featured on /proz"
+                      className="inline-flex h-9 items-center rounded-md border border-dashed border-slate-300 px-3 text-[13px] font-medium text-slate-500 hover:bg-slate-50"
+                    >
+                      <Star className="mr-2 h-4 w-4" />
+                      Verify to feature
+                    </Link>
+                  )}
                   <Button
                     onClick={handleEditProfile}
                     size="sm"

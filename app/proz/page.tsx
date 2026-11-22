@@ -121,7 +121,7 @@ export default function BrowseProz() {
       try {
         setLoading(true)
         setError(null)
-        const response = await prozProfilesApi.searchPublicProfiles({ page, page_size: pageSize, verification_status: "verified", sort_by: "rating", sort_order: "desc" })
+        const response = await prozProfilesApi.searchPublicProfiles({ page, page_size: pageSize, is_featured: true, verification_status: "verified", sort_by: "rating", sort_order: "desc" })
         let profiles: any[] = []
         let totalItems = 0
         if (response && typeof response === "object") {
@@ -226,7 +226,7 @@ export default function BrowseProz() {
       <div className="container mx-auto px-4 sm:px-6 pt-24 md:pt-28 pb-6 md:pb-8">
         {/* Mobile filters toggle */}
         <div className="flex items-center justify-between mb-4 lg:hidden">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Work-Verified Professionals</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Featured Professionals</h2>
           <Button variant="outline" size="sm" onClick={() => setShowFiltersMobile((v) => !v)} className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300">
             <Filter className="w-4 h-4 mr-2" /> Filters
           </Button>
@@ -332,7 +332,7 @@ export default function BrowseProz() {
 
           <div className="lg:col-span-3">
             <div className="hidden lg:flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Work-Verified Professionals</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Featured Professionals</h2>
               <p className="text-gray-600 dark:text-gray-300">Page {page} of {totalPages}</p>
             </div>
 
@@ -415,6 +415,28 @@ export default function BrowseProz() {
                     Showing {filteredProfessionals.length} of {professionals.length} professionals
                   </div>
                 </div>
+              )}
+
+              {professionals.length === 0 && (
+                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <CardContent className="p-10 text-center">
+                    <div className="w-16 h-16 mx-auto mb-4 bg-indigo-50 dark:bg-indigo-900/30 rounded-full flex items-center justify-center">
+                      <Star className="w-8 h-8 text-indigo-500" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Featured professionals are coming soon</h3>
+                    <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                      We&apos;re reviewing our network and will feature verified experts here shortly. Tell us what you need and we&apos;ll match you with the right person.
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-3">
+                      <Link href="/request-service">
+                        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">Request a service</Button>
+                      </Link>
+                      <Link href="/register">
+                        <Button variant="outline">Join as a professional</Button>
+                      </Link>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
 
               {filteredProfessionals.length === 0 && professionals.length > 0 && (
