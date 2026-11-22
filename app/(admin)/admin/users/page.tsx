@@ -15,7 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { toast } from "@/components/ui/use-toast"
 import { useAuth } from "@/contexts/auth-context"
-import { authApi, adminApi, prozProfilesApi } from "@/lib/api"
+import { authApi, adminApi, emailApi, prozProfilesApi } from "@/lib/api"
 import { CandidateProfileView } from "@/components/dashboard/candidate-profile-view"
 import { MessageProDialog } from "@/components/admin/message-pro-dialog"
 import type { PublicProzProfileWithReviews, ProzProfileUpdate } from "@/types/api"
@@ -25,6 +25,7 @@ export default function AdminUsersPage() {
   const { token } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [isMessageOpen, setIsMessageOpen] = useState(false)
+  const [resendingFor, setResendingFor] = useState<string | null>(null)
   const [users, setUsers] = useState<User[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
@@ -224,7 +225,7 @@ export default function AdminUsersPage() {
       setSelectedAccount(null)
       setIsAccountView(false)
 
-      if (user.is_superuser) {
+      if (user.is_superuser || !user.is_verified) {
         setSelectedAccount(user)
         setIsAccountView(true)
         setIsProfileOpen(true)
@@ -255,11 +256,10 @@ export default function AdminUsersPage() {
         }
       }
 
-      toast({
-        title: "Profile not found",
-        description: "This user has not created a professional profile yet.",
-        variant: "destructive",
-      })
+      // Verified, but no profile yet: show their account details instead of an error.
+      setSelectedAccount(user)
+      setIsAccountView(true)
+      setIsProfileOpen(true)
     } catch (error) {
       console.error("Error loading profile:", error)
       toast({
@@ -546,7 +546,7 @@ export default function AdminUsersPage() {
         <DialogContent
           className={
             isEditMode || isAccountView
-              ? "max-h-[90vh] overflow-y-auto sm:max-w-[800px]"
+              ? "max-h-[90vh] overflow-y-auto border-slate-200 bg-white text-slate-900 sm:max-w-[800px] [&>button]:text-slate-500 [&_.text-muted-foreground]:text-slate-500"
               : "max-h-[92vh] w-[min(1200px,98vw)] max-w-[1200px] overflow-y-auto border-slate-200 bg-slate-50 p-0 text-slate-900 [&>button]:text-slate-500"
           }
         >
@@ -594,9 +594,46 @@ export default function AdminUsersPage() {
             </div>
           ) : isAccountView && selectedAccount ? (
             <div className="space-y-4 text-sm">
-              <p className="text-muted-foreground">
-                Super admins manage the platform and do not have a public professional profile.
-              </p>
+              {selectedAccount.is_superuser ? (
+                <p className="text-muted-foreground">
+                  Super admins manage the platform and do not have a public professional profile.
+                </p>
+              ) : !selectedAccount.is_verified ? (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900">
+                  <p className="font-medium">Signed up, but hasn&apos;t verified their email yet.</p>
+                  <p className="mt-1 text-[13px]">
+                    Their profile is created the first time they sign in after verifying. You can send the verification email again.
+                  </p>
+                  <Button
+                    size="sm"
+                    className="mt-3 bg-brand text-white hover:bg-brand-dark"
+                    disabled={resendingFor === selectedAccount.id}
+                    onClick={async () => {
+                      if (!selectedAccount.email) return
+                      setResendingFor(selectedAccount.id)
+                      try {
+                        await emailApi.requestVerification(selectedAccount.email)
+                        toast({ title: "Verification email sent", description: selectedAccount.email })
+                      } catch (e) {
+                        toast({
+                          title: "Couldn't send it",
+                          description: e instanceof Error ? e.message : "Try again in a minute.",
+                          variant: "destructive",
+                        })
+                      } finally {
+                        setResendingFor(null)
+                      }
+                    }}
+                  >
+                    {resendingFor === selectedAccount.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                    Resend verification email
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-muted-foreground">
+                  Verified, but hasn&apos;t created a professional profile yet. It&apos;s created when they finish sign-up or open their dashboard.
+                </p>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-muted-foreground">Email</div>
@@ -604,7 +641,7 @@ export default function AdminUsersPage() {
                 </div>
                 <div>
                   <div className="text-muted-foreground">Role</div>
-                  <div className="font-medium">Super Admin</div>
+                  <div className="font-medium">{selectedAccount.is_superuser ? "Super Admin" : "Professional"}</div>
                 </div>
                 <div>
                   <div className="text-muted-foreground">Status</div>

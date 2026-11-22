@@ -6,6 +6,8 @@ export interface User {
   last_name: string | null
   is_active: boolean | null
   is_superuser: boolean | null
+  is_verified?: boolean | null
+  created_at?: string | null
   is_flagged?: boolean | null
   is_banned?: boolean | null
   fraud_score?: number | null
