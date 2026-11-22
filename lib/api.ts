@@ -1077,6 +1077,26 @@ export const verificationApi = {
 }
 
 // Admin API
+/** What an admin can change on a professional's profile (PUT /api/v1/admin/proz/profiles/{id}). */
+export type AdminProfileUpdate = {
+  first_name?: string
+  last_name?: string
+  phone_number?: string | null
+  bio?: string | null
+  location?: string | null
+  years_experience?: number | null
+  hourly_rate?: number | null
+  availability?: string | null
+  education?: string | null
+  certifications?: string | null
+  website?: string | null
+  linkedin?: string | null
+  preferred_contact_method?: string | null
+  skills?: string[]
+  verification_status?: "pending" | "verified" | "rejected"
+  is_featured?: boolean
+}
+
 export const adminApi = {
   getDashboard: async (token: string): Promise<AdminDashboardResponse> => {
     try {
@@ -1262,6 +1282,21 @@ export const adminApi = {
       console.error("Network error while toggling profile featured status:", networkError)
       throw new Error("Network error: Could not connect to the API.")
     }
+  },
+
+  /** Admin edit of a professional's profile. Only the fields sent are changed. */
+  updateProfile: async (profileId: string, data: AdminProfileUpdate, token: string): Promise<any> => {
+    let response: Response
+    try {
+      response = await fetch(`${API_BASE_URL}/api/v1/admin/proz/profiles/${profileId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+      })
+    } catch {
+      throw new Error("Couldn't reach the server. Check your connection and try again.")
+    }
+    return handleResponse<any>(response)
   },
 
   deleteProfile: async (profileId: string, reason: string, token: string): Promise<any> => {

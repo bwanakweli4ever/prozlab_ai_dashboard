@@ -161,6 +161,11 @@
   --ring: 239 84% 67%;
 }
 
+/* Dialogs, menus and toasts render outside .dashboard-shell; give them the dashboard font too */
+body:has(.dashboard-shell) {
+  font-family: var(--font-inter, 'Inter'), system-ui, sans-serif;
+}
+
 .dashboard-shell input:not([type="checkbox"]):not([type="radio"]),
 .dashboard-shell textarea,
 .dashboard-shell select {

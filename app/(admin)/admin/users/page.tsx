@@ -7,18 +7,18 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import Link from "next/link"
-import { Search, Loader2, MoreHorizontal, Edit, Save, Send, X, Trash2, ChevronLeft, ChevronRight, ShieldAlert, Star } from "lucide-react"
+import { Search, Loader2, MoreHorizontal, Edit, Send, Trash2, ChevronLeft, ChevronRight, ShieldAlert, Star } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { toast } from "@/components/ui/use-toast"
 import { useAuth } from "@/contexts/auth-context"
-import { authApi, adminApi, emailApi, prozProfilesApi } from "@/lib/api"
+import { authApi, adminApi, emailApi, type AdminProfileUpdate } from "@/lib/api"
 import { CandidateProfileView } from "@/components/dashboard/candidate-profile-view"
 import { MessageProDialog } from "@/components/admin/message-pro-dialog"
-import type { PublicProzProfileWithReviews, ProzProfileUpdate } from "@/types/api"
+import { AdminProfileEditForm, type EditableProfile } from "@/components/admin/admin-profile-edit-form"
+import type { PublicProzProfileWithReviews } from "@/types/api"
 import type { User } from "@/types/api"
 
 export default function AdminUsersPage() {
@@ -40,34 +40,13 @@ export default function AdminUsersPage() {
   const [isAccountView, setIsAccountView] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [editFormData, setEditFormData] = useState<ProzProfileUpdate>({})
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [userToDelete, setUserToDelete] = useState<User | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteReason, setDeleteReason] = useState("")
 
   const handleEditProfile = () => {
-    if (profile) {
-      setEditFormData({
-        first_name: profile.first_name,
-        last_name: profile.last_name,
-        phone_number: profile.phone_number || "",
-        bio: profile.bio || "",
-        location: profile.location || "",
-        years_experience: profile.years_experience || 0,
-        hourly_rate: profile.hourly_rate || 0,
-        availability: profile.availability || "",
-        education: profile.education || "",
-        certifications: profile.certifications || "",
-        website: profile.website || "",
-        linkedin: profile.linkedin || "",
-        preferred_contact_method: profile.preferred_contact_method || "",
-        verification_status: profile.verification_status,
-        is_featured: profile.is_featured,
-        specialties: profile.specialties || []
-      })
-      setIsEditMode(true)
-    }
+    if (profile) setIsEditMode(true)
   }
 
   const handleToggleFeatured = async () => {
@@ -75,7 +54,7 @@ export default function AdminUsersPage() {
     const next = !profile.is_featured
     try {
       setIsFeaturing(true)
-      await adminApi.toggleProfileFeatured(profile.id, next, token)
+      await adminApi.toggleProfileFeatured(String(profile.id), next, token)
       setProfile({ ...profile, is_featured: next })
       toast({
         title: next ? "Featured on /proz" : "Removed from /proz",
@@ -94,33 +73,22 @@ export default function AdminUsersPage() {
     }
   }
 
-  const handleSaveProfile = async () => {
+  const handleSaveProfile = async (changes: AdminProfileUpdate) => {
     if (!profile || !token) return
-
-    // Basic validation
-    if (!editFormData.first_name || !editFormData.last_name) {
-      toast({
-        title: "Validation Error",
-        description: "First name and last name are required",
-        variant: "destructive",
-      })
+    if (Object.keys(changes).length === 0) {
+      setIsEditMode(false)
       return
     }
-
     try {
       setIsSaving(true)
-      const updatedProfile = await prozProfilesApi.updateProfile(editFormData, token)
-      setProfile(updatedProfile)
+      const updated = await adminApi.updateProfile(String(profile.id), changes, token)
+      setProfile({ ...profile, ...updated })
       setIsEditMode(false)
-      toast({
-        title: "Success",
-        description: "Profile updated successfully",
-      })
+      toast({ title: "Profile saved", description: `${updated.first_name ?? profile.first_name}'s profile is up to date.` })
     } catch (error) {
-      console.error("Error updating profile:", error)
       toast({
-        title: "Error",
-        description: "Failed to update profile",
+        title: "Couldn't save",
+        description: error instanceof Error ? error.message : "Please try again.",
         variant: "destructive",
       })
     } finally {
@@ -130,7 +98,6 @@ export default function AdminUsersPage() {
 
   const handleCancelEdit = () => {
     setIsEditMode(false)
-    setEditFormData({})
   }
 
 
@@ -243,12 +210,13 @@ export default function AdminUsersPage() {
     setDeleteReason("")
   }
 
-  const handleViewProfile = async (user: User) => {
+  const handleViewProfile = async (user: User, startEditing = false) => {
     try {
       setIsProfileLoading(true)
       setProfile(null)
       setSelectedAccount(null)
       setIsAccountView(false)
+      setIsEditMode(false)
 
       // Only an explicit "not verified" means there can't be a profile yet.
       if (user.is_superuser || user.is_verified === false) {
@@ -266,6 +234,7 @@ export default function AdminUsersPage() {
         if (match?.id) {
           const data = await adminApi.getProfileForVerification(match.id, token)
           setProfile(data)
+          setIsEditMode(startEditing)
           setIsProfileOpen(true)
           return
         }
@@ -275,6 +244,7 @@ export default function AdminUsersPage() {
         try {
           const data = await adminApi.getProfileForVerification(user.id, token)
           setProfile(data)
+          setIsEditMode(startEditing)
           setIsProfileOpen(true)
           return
         } catch {
@@ -504,7 +474,7 @@ export default function AdminUsersPage() {
                               </DropdownMenuItem>
                             )}
                             {!user.is_superuser && (
-                              <DropdownMenuItem onClick={() => handleViewProfile(user).then(() => handleEditProfile())}>
+                              <DropdownMenuItem onClick={() => handleViewProfile(user, true)}>
                                 Edit Profile
                               </DropdownMenuItem>
                             )}
@@ -564,14 +534,15 @@ export default function AdminUsersPage() {
         setIsProfileOpen(open)
         if (!open) {
           setIsEditMode(false)
-          setEditFormData({})
           setSelectedAccount(null)
           setIsAccountView(false)
         }
       }}>
         <DialogContent
           className={
-            isEditMode || isAccountView
+            isEditMode
+              ? "max-h-[92vh] overflow-y-auto border-slate-200 bg-slate-50 text-slate-900 sm:max-w-[820px] [&>button]:text-slate-500"
+              : isAccountView
               ? "max-h-[90vh] overflow-y-auto border-slate-200 bg-white text-slate-900 sm:max-w-[800px] [&>button]:text-slate-500 [&_.text-muted-foreground]:text-slate-500"
               : "max-h-[92vh] w-[min(1200px,98vw)] max-w-[1200px] overflow-y-auto border-slate-200 bg-slate-50 p-0 text-slate-900 [&>button]:text-slate-500"
           }
@@ -579,7 +550,7 @@ export default function AdminUsersPage() {
           <div className={isEditMode || isAccountView ? "" : "border-b border-slate-200 bg-white px-4 py-4 sm:px-6"}>
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
-              <span className={isEditMode || isAccountView ? "" : "text-slate-900"}>
+              <span className="text-slate-900">
                 {isAccountView ? "Account Details" : isEditMode ? "Edit Profile" : "Full Profile"}
               </span>
               {profile && !isEditMode && !isAccountView && (
@@ -721,192 +692,12 @@ export default function AdminUsersPage() {
           ) : profile ? (
             <div className="space-y-6">
               {isEditMode ? (
-                <div className="space-y-4">
-                  {/* Basic Information */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="first_name">First Name</Label>
-                      <Input
-                        id="first_name"
-                        value={editFormData.first_name || ""}
-                        onChange={(e) => setEditFormData({...editFormData, first_name: e.target.value})}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="last_name">Last Name</Label>
-                      <Input
-                        id="last_name"
-                        value={editFormData.last_name || ""}
-                        onChange={(e) => setEditFormData({...editFormData, last_name: e.target.value})}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="phone_number">Phone Number</Label>
-                      <Input
-                        id="phone_number"
-                        value={editFormData.phone_number || ""}
-                        onChange={(e) => setEditFormData({...editFormData, phone_number: e.target.value})}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="location">Location</Label>
-                      <Input
-                        id="location"
-                        value={editFormData.location || ""}
-                        onChange={(e) => setEditFormData({...editFormData, location: e.target.value})}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="bio">Bio</Label>
-                    <Textarea
-                      id="bio"
-                      value={editFormData.bio || ""}
-                      onChange={(e) => setEditFormData({...editFormData, bio: e.target.value})}
-                      rows={3}
-                    />
-                  </div>
-
-                  {/* Professional Information */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="years_experience">Years of Experience</Label>
-                      <Input
-                        id="years_experience"
-                        type="number"
-                        value={editFormData.years_experience || 0}
-                        onChange={(e) => setEditFormData({...editFormData, years_experience: parseInt(e.target.value) || 0})}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="hourly_rate">Hourly Rate ($)</Label>
-                      <Input
-                        id="hourly_rate"
-                        type="number"
-                        value={editFormData.hourly_rate || 0}
-                        onChange={(e) => setEditFormData({...editFormData, hourly_rate: parseFloat(e.target.value) || 0})}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="availability">Availability</Label>
-                    <Input
-                      id="availability"
-                      value={editFormData.availability || ""}
-                      onChange={(e) => setEditFormData({...editFormData, availability: e.target.value})}
-                    />
-                  </div>
-
-                  {/* Education and Certifications */}
-                  <div>
-                    <Label htmlFor="education">Education</Label>
-                    <Textarea
-                      id="education"
-                      value={editFormData.education || ""}
-                      onChange={(e) => setEditFormData({...editFormData, education: e.target.value})}
-                      rows={2}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="certifications">Certifications</Label>
-                    <Textarea
-                      id="certifications"
-                      value={editFormData.certifications || ""}
-                      onChange={(e) => setEditFormData({...editFormData, certifications: e.target.value})}
-                      rows={2}
-                    />
-                  </div>
-
-                  {/* Contact Information */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="website">Website</Label>
-                      <Input
-                        id="website"
-                        value={editFormData.website || ""}
-                        onChange={(e) => setEditFormData({...editFormData, website: e.target.value})}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="linkedin">LinkedIn</Label>
-                      <Input
-                        id="linkedin"
-                        value={editFormData.linkedin || ""}
-                        onChange={(e) => setEditFormData({...editFormData, linkedin: e.target.value})}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="preferred_contact_method">Preferred Contact Method</Label>
-                    <Select
-                      value={editFormData.preferred_contact_method || ""}
-                      onValueChange={(value) => setEditFormData({...editFormData, preferred_contact_method: value})}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select contact method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="email">Email</SelectItem>
-                        <SelectItem value="phone">Phone</SelectItem>
-                        <SelectItem value="linkedin">LinkedIn</SelectItem>
-                        <SelectItem value="website">Website</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Admin Controls */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="verification_status">Verification Status</Label>
-                      <Select
-                        value={editFormData.verification_status || "pending"}
-                        onValueChange={(value) => setEditFormData({...editFormData, verification_status: value as "pending" | "verified" | "rejected"})}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="verified">Verified</SelectItem>
-                          <SelectItem value="rejected">Rejected</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        id="is_featured"
-                        checked={editFormData.is_featured || false}
-                        onChange={(e) => setEditFormData({...editFormData, is_featured: e.target.checked})}
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                      <Label htmlFor="is_featured">Featured Profile</Label>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex justify-end space-x-2 pt-4 border-t">
-                    <Button onClick={handleCancelEdit} variant="outline" disabled={isSaving}>
-                      <X className="h-4 w-4 mr-2" />
-                      Cancel
-                    </Button>
-                    <Button onClick={handleSaveProfile} disabled={isSaving}>
-                      {isSaving ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Save className="h-4 w-4 mr-2" />
-                      )}
-                      Save Changes
-                    </Button>
-                  </div>
-                </div>
+                  <AdminProfileEditForm
+                    profile={profile as unknown as EditableProfile}
+                    saving={isSaving}
+                    onCancel={handleCancelEdit}
+                    onSave={handleSaveProfile}
+                  />
               ) : (
                 <div className="p-4 sm:p-6">
                   <CandidateProfileView profile={profile} readOnly />
