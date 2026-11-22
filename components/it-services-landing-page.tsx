@@ -10,8 +10,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { ProzLabLogo } from "@/components/prozlab-logo"
 import { ServiceDeskPreview } from "@/components/landing/service-desk-preview"
 import { FieldExpertsSection } from "@/components/landing/field-experts"
-import { CASE_STUDIES, PROCESS_STEPS, SERVICES } from "@/components/landing/it-services-content"
+import { CASE_STUDIES, CLIENT_LOGOS, PROCESS_STEPS, SERVICES } from "@/components/landing/it-services-content"
 import { BOOK_DEMO_URL } from "@/lib/constants"
+import { useAuth } from "@/contexts/auth-context"
 
 const navLinks = [
   { label: "Services", href: "#services" },
@@ -22,6 +23,10 @@ const navLinks = [
 
 export function ItServicesLandingPage() {
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const { user, isAuthenticated } = useAuth()
+  const account = isAuthenticated
+    ? { label: "Dashboard", href: user?.is_superuser ? "/admin" : "/dashboard" }
+    : { label: "Log in", href: "/login" }
 
   return (
     <div className="landing-page min-h-screen overflow-x-hidden bg-white text-slate-900">
@@ -40,8 +45,15 @@ export function ItServicesLandingPage() {
           </nav>
 
           <div className="flex shrink-0 items-center gap-2">
-            <Link href="/login" className="hidden px-3 py-2 text-[14px] font-medium text-slate-600 hover:text-slate-900 md:inline-block">
-              Log in
+            <Link
+              href={account.href}
+              className={
+                isAuthenticated
+                  ? "hidden items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-[14px] font-semibold text-slate-800 hover:bg-slate-50 md:inline-flex"
+                  : "hidden px-3 py-2 text-[14px] font-medium text-slate-600 hover:text-slate-900 md:inline-block"
+              }
+            >
+              {account.label}
             </Link>
             <Button asChild className="h-10 rounded-lg bg-brand px-4 text-[14px] font-semibold text-white hover:bg-brand-dark sm:px-5">
               <Link href="/request-service">Request support</Link>
@@ -62,7 +74,7 @@ export function ItServicesLandingPage() {
                   <SheetTitle>Menu</SheetTitle>
                 </SheetHeader>
                 <nav className="mt-6 flex flex-col gap-1" aria-label="Mobile">
-                  {[...navLinks, { label: "Log in", href: "/login" }].map((link) => (
+                  {[...navLinks, account].map((link) => (
                     <Link
                       key={link.label}
                       href={link.href}
@@ -134,17 +146,25 @@ export function ItServicesLandingPage() {
                   </a>
                 </Button>
               </div>
-              <p className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] text-slate-500">
-                <span>Recent work for</span>
-                {CASE_STUDIES.map((study, i) => (
-                  <span key={study.client} className="inline-flex items-center gap-3">
-                    {i > 0 && <span className="h-1 w-1 rounded-full bg-slate-300" aria-hidden />}
-                    <a href="#work" className="font-semibold text-slate-800 underline-offset-4 hover:text-brand hover:underline">
-                      {study.client}
-                    </a>
-                  </span>
-                ))}
-              </p>
+              <div className="mt-8">
+                <p className="text-[13px] font-medium text-slate-500">Recent work for</p>
+                <ul className="mt-3 flex flex-wrap items-center gap-x-7 gap-y-3">
+                  {CLIENT_LOGOS.map((client) => (
+                    <li key={client.name}>
+                      <a
+                        href={client.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 opacity-90 grayscale-[30%] transition hover:opacity-100 hover:grayscale-0"
+                        title={client.name}
+                      >
+                        <Image src={client.logo} alt={`${client.name} logo`} width={client.width} height={client.height} className="h-[30px] w-auto" />
+                        {client.showName && <span className="text-[15px] font-bold text-slate-800">{client.name}</span>}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
 
             <div className="relative min-w-0">
@@ -206,8 +226,13 @@ export function ItServicesLandingPage() {
             <ul className="mt-10 grid gap-6 md:grid-cols-2">
               {CASE_STUDIES.map((study) => (
                 <li key={study.client} className="flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
-                  <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                    <h3 className="text-[22px] font-bold text-slate-900">{study.client}</h3>
+                  <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+                    <h3 className="flex items-center gap-3 text-[22px] font-bold text-slate-900">
+                      <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white p-1.5">
+                        <Image src={study.logo} alt="" width={32} height={32} className="h-8 w-8 object-contain" />
+                      </span>
+                      {study.client}
+                    </h3>
                     <a
                       href={study.url}
                       target="_blank"

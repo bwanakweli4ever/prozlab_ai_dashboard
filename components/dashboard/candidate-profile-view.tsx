@@ -29,7 +29,7 @@ import { Button } from "@/components/ui/button"
 import { useProfile } from "@/contexts/profile-context"
 import type { ProzProfileResponse } from "@/types/api"
 import { cn, getProfileImageUrl } from "@/lib/utils"
-import { computeProfileCompletion } from "@/lib/profile-completion"
+import { computeProfileCompletion, profileChecklist } from "@/lib/profile-completion"
 
 type ExtendedProfile = ProzProfileResponse & {
   skills?: string[]
@@ -69,13 +69,21 @@ function extractSkillsFromText(...texts: (string | undefined)[]): string[] {
   return [...new Set(found)]
 }
 
+// CV text pasted as skills often carries bullets ("• Inventory") and headings ("CORE SKILLS").
+const SKILL_HEADING = /^((core|key|technical|top|soft|hard)\s+)?(skills|competencies|expertise)\s*:?$/i
+function cleanSkill(value: unknown): string {
+  return String(value ?? "")
+    .replace(/^[\s•·\-–—*▪●◦]+/, "")
+    .trim()
+}
+
 function deriveSkills(profile: ExtendedProfile): string[] {
   const fromArray = [
     ...(Array.isArray(profile.skills) ? profile.skills : []),
     ...(Array.isArray(profile.specialties) ? profile.specialties : []),
   ]
-    .map((s) => String(s).trim())
-    .filter((s) => isShortLabel(s))
+    .map(cleanSkill)
+    .filter((s) => isShortLabel(s) && !SKILL_HEADING.test(s))
 
   if (fromArray.length) return [...new Set(fromArray)].slice(0, 12)
 
@@ -309,10 +317,6 @@ export function CandidateProfileView({ profile, onEdit, readOnly = false }: Cand
   const skillVerified = profile.skill_verification_status === "verified"
   const skillPending = ["in_progress", "pending_review"].includes(profile.skill_verification_status || "")
 
-  const hasBasic = !!(profile.first_name && profile.last_name && profile.email)
-  const hasExperience = (profile.years_experience ?? 0) > 0 || (profile.bio?.length ?? 0) > 50
-  const hasSkills = skills.length > 0
-  const hasPortfolio = projects.length > 0
 
   const hourlyRate = profile.hourly_rate && profile.hourly_rate > 0 ? profile.hourly_rate : null
   const stepsLeft = computeProfileCompletion(profile).missingFields.length
@@ -680,29 +684,16 @@ export function CandidateProfileView({ profile, onEdit, readOnly = false }: Cand
               ))}
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-3">
-              {["MISTA.io", "Itike", "DataPulse"].map((name, i) => (
-                <div
-                  key={name}
-                  className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 p-4 text-center"
+            <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-6 text-center">
+              <p className="text-[13px] text-slate-500">No portfolio links yet.</p>
+              {!readOnly && (
+                <Link
+                  href="/dashboard/verification"
+                  className="mt-1.5 inline-block text-[12px] font-semibold text-brand hover:text-brand-dark"
                 >
-                  <div
-                    className={cn(
-                      "mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-lg text-white",
-                      ["bg-indigo-600", "bg-violet-600", "bg-sky-600"][i]
-                    )}
-                  >
-                    {name.charAt(0)}
-                  </div>
-                  <p className="text-[13px] font-semibold text-slate-700">{name}</p>
-                  <Link
-                    href="/dashboard/verification"
-                    className="mt-2 inline-block text-[11px] font-semibold text-brand"
-                  >
-                    Add project →
-                  </Link>
-                </div>
-              ))}
+                  Add a portfolio link or work sample →
+                </Link>
+              )}
             </div>
           )}
         </div>
@@ -805,11 +796,14 @@ export function CandidateProfileView({ profile, onEdit, readOnly = false }: Cand
             </p>
           )}
           <ul className="mt-4 space-y-2.5 border-t border-slate-100 pt-4">
-            <ChecklistRow done={hasBasic} label="Basic Information" />
-            <ChecklistRow done={hasExperience} label="Work Experience" />
-            <ChecklistRow done={hasSkills} label="Skills" />
-            <ChecklistRow done={hasPortfolio} label="Portfolio" />
-            <ChecklistRow done={skillVerified} pending={skillPending && !skillVerified} label="Work Verification" />
+            {profileChecklist(profile).map((item) => (
+              <ChecklistRow
+                key={item.key}
+                done={item.done}
+                pending={item.key === "verify" && skillPending && !skillVerified}
+                label={item.label}
+              />
+            ))}
           </ul>
         </div>
 

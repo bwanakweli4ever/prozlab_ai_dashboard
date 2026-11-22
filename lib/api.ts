@@ -2352,3 +2352,21 @@ export const profileReminderApi = {
     return handleResponse<ProfileReminderResult>(response)
   },
 }
+
+
+// ---- Admin: message a professional (email + in-app notification) ----
+
+export type AdminMessageResult = { success: boolean; emailed: boolean; message: string }
+
+export async function messageProfessional(
+  token: string,
+  profileId: string,
+  body: { subject: string; message: string; send_email?: boolean },
+): Promise<AdminMessageResult> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/admin/proz/profiles/${encodeURIComponent(profileId)}/message`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ send_email: true, ...body }),
+  })
+  return handleResponse<AdminMessageResult>(response)
+}

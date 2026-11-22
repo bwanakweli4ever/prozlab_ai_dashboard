@@ -10,19 +10,21 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import Link from "next/link"
-import { Search, Loader2, MoreHorizontal, Edit, Save, X, Trash2, ChevronLeft, ChevronRight, ShieldAlert } from "lucide-react"
+import { Search, Loader2, MoreHorizontal, Edit, Save, Send, X, Trash2, ChevronLeft, ChevronRight, ShieldAlert } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { toast } from "@/components/ui/use-toast"
 import { useAuth } from "@/contexts/auth-context"
 import { authApi, adminApi, prozProfilesApi } from "@/lib/api"
 import { CandidateProfileView } from "@/components/dashboard/candidate-profile-view"
+import { MessageProDialog } from "@/components/admin/message-pro-dialog"
 import type { PublicProzProfileWithReviews, ProzProfileUpdate } from "@/types/api"
 import type { User } from "@/types/api"
 
 export default function AdminUsersPage() {
   const { token } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
+  const [isMessageOpen, setIsMessageOpen] = useState(false)
   const [users, setUsers] = useState<User[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
@@ -545,21 +547,38 @@ export default function AdminUsersPage() {
           className={
             isEditMode || isAccountView
               ? "max-h-[90vh] overflow-y-auto sm:max-w-[800px]"
-              : "max-h-[92vh] w-[min(1200px,98vw)] max-w-[1200px] overflow-y-auto p-0"
+              : "max-h-[92vh] w-[min(1200px,98vw)] max-w-[1200px] overflow-y-auto border-slate-200 bg-slate-50 p-0 text-slate-900 [&>button]:text-slate-500"
           }
         >
-          <div className={isEditMode || isAccountView ? "" : "border-b border-slate-100 px-4 py-4 sm:px-6"}>
+          <div className={isEditMode || isAccountView ? "" : "border-b border-slate-200 bg-white px-4 py-4 sm:px-6"}>
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
-              {isAccountView ? "Account Details" : isEditMode ? "Edit Profile" : "Full Profile"}
+              <span className={isEditMode || isAccountView ? "" : "text-slate-900"}>
+                {isAccountView ? "Account Details" : isEditMode ? "Edit Profile" : "Full Profile"}
+              </span>
               {profile && !isEditMode && !isAccountView && (
-                <Button onClick={handleEditProfile} size="sm" variant="outline">
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
+                <span className="mr-8 flex items-center gap-2">
+                  <Button
+                    onClick={() => setIsMessageOpen(true)}
+                    size="sm"
+                    className="bg-brand text-white hover:bg-brand-dark"
+                  >
+                    <Send className="mr-2 h-4 w-4" />
+                    Message
+                  </Button>
+                  <Button
+                    onClick={handleEditProfile}
+                    size="sm"
+                    variant="outline"
+                    className="border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  >
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit
+                  </Button>
+                </span>
               )}
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-slate-500">
               {isProfileLoading
                 ? "Loading..."
                 : isAccountView && selectedAccount
@@ -799,6 +818,14 @@ export default function AdminUsersPage() {
               ) : (
                 <div className="p-4 sm:p-6">
                   <CandidateProfileView profile={profile} readOnly />
+                  <MessageProDialog
+                    open={isMessageOpen}
+                    onOpenChange={setIsMessageOpen}
+                    profileId={String(profile.id)}
+                    firstName={profile.first_name || ""}
+                    fullName={`${profile.first_name ?? ""} ${profile.last_name ?? ""}`.trim() || ((profile as { email?: string }).email ?? "")}
+                    email={(profile as { email?: string }).email ?? ""}
+                  />
                 </div>
               )}
             </div>

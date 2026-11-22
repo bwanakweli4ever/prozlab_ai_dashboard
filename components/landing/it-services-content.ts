@@ -15,12 +15,30 @@ export const SERVICES: ServiceItem[] = [
   { icon: Bot, title: "AI agents", note: "Answer, sort and draft" },
 ]
 
-export type CaseStudy = { client: string; url: string; domain: string; about: string; built: string[]; tags: string[] }
+export type CaseStudy = {
+  client: string
+  url: string
+  domain: string
+  about: string
+  built: string[]
+  tags: string[]
+  logo: string
+}
+
+/** Clients whose logos appear on the homepage. Only real clients. */
+export type ClientLogo = { name: string; url: string; logo: string; width: number; height: number; showName?: boolean }
+
+export const CLIENT_LOGOS: ClientLogo[] = [
+  { name: "Fidloy", url: "https://fidloy.com", logo: "/images/clients/fidloy.png", width: 28, height: 28, showName: true },
+  { name: "Mista", url: "https://mista.io", logo: "/images/clients/mista.svg", width: 30, height: 30 },
+  { name: "Mad Indian Printing", url: "https://miprintco.com", logo: "/images/clients/miprintco.png", width: 85, height: 30 },
+]
 
 /** Client work shown on the homepage. Facts only: add a client quote here once the client provides one. */
 export const CASE_STUDIES: CaseStudy[] = [
   {
     client: "Fidloy",
+    logo: "/images/clients/fidloy.png",
     url: "https://fidloy.com",
     domain: "fidloy.com",
     about: "An AI customer-success agent that helps SaaS companies win back inactive users and failed payments by email, SMS or WhatsApp.",
@@ -34,6 +52,7 @@ export const CASE_STUDIES: CaseStudy[] = [
   },
   {
     client: "Mista",
+    logo: "/images/clients/mista.svg",
     url: "https://mista.io",
     domain: "mista.io",
     about: "Messaging, verification and voice APIs that businesses use to reach their customers.",
