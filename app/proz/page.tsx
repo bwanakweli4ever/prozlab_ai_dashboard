@@ -17,7 +17,7 @@ import { SPECIALTIES, AVAILABILITY_OPTIONS, SPECIALTY_SYNONYMS } from "@/lib/con
 
 export default function BrowseProz() {
   const [experienceRange, setExperienceRange] = useState([0])
-  const [hourlyRateRange, setHourlyRateRange] = useState([150])
+  const [hourlyRateRange, setHourlyRateRange] = useState([200])
   const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([])
   const [selectedAvailability, setSelectedAvailability] = useState<string[]>([])
   const [showFiltersMobile, setShowFiltersMobile] = useState(false)
@@ -203,7 +203,7 @@ export default function BrowseProz() {
 
   const resetFilters = () => {
     setExperienceRange([0])
-    setHourlyRateRange([150])
+    setHourlyRateRange([200])
     setSelectedSpecialties([])
     setSelectedAvailability([])
   }
@@ -248,7 +248,7 @@ export default function BrowseProz() {
                   <Slider value={experienceRange} onValueChange={setExperienceRange} max={15} step={1} className="w-full" />
                 </div>
                 <div>
-                  <Label className="text-sm font-medium text-gray-900 dark:text-white mb-2 block">Maximum Hourly Rate: ${hourlyRateRange[0]}</Label>
+                  <Label className="text-sm font-medium text-gray-900 dark:text-white mb-2 block">Maximum Hourly Rate: {hourlyRateRange[0] >= 200 ? "Any" : `$${hourlyRateRange[0]}`}</Label>
                   <Slider value={hourlyRateRange} onValueChange={setHourlyRateRange} max={200} step={5} className="w-full" />
                 </div>
                 <div>
@@ -298,7 +298,7 @@ export default function BrowseProz() {
                   </div>
 
                   <div>
-                    <Label className="text-sm font-medium text-gray-900 dark:text-white mb-3 block">Maximum Hourly Rate: ${hourlyRateRange[0]}</Label>
+                    <Label className="text-sm font-medium text-gray-900 dark:text-white mb-3 block">Maximum Hourly Rate: {hourlyRateRange[0] >= 200 ? "Any" : `$${hourlyRateRange[0]}`}</Label>
                     <Slider value={hourlyRateRange} onValueChange={setHourlyRateRange} max={200} step={5} className="w-full" />
                   </div>
 
@@ -343,7 +343,7 @@ export default function BrowseProz() {
             ) : (
             <div className="space-y-4">
               {/* Active filters display */}
-              {(selectedSpecialties.length > 0 || selectedAvailability.length > 0 || experienceRange[0] > 0 || hourlyRateRange[0] < 200) && (
+              {professionals.length > 0 && (selectedSpecialties.length > 0 || selectedAvailability.length > 0 || experienceRange[0] > 0 || hourlyRateRange[0] < 200) && (
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Active Filters</h4>
