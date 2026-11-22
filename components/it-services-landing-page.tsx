@@ -103,11 +103,7 @@ export function ItServicesLandingPage() {
 
           <div className="mx-auto grid max-w-[1200px] items-center gap-14 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16 lg:px-8 lg:py-24">
             <div className="min-w-0">
-              <p className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[13px] font-medium text-slate-600 shadow-sm backdrop-blur">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
-                IT · Websites · Software for US businesses
-              </p>
-              <h1 className="mt-5 text-[2.6rem] font-extrabold leading-[1.04] tracking-tight text-slate-900 sm:text-[3.4rem] lg:text-[3.9rem]">
+              <h1 className="text-[2.6rem] font-extrabold leading-[1.04] tracking-tight text-slate-900 sm:text-[3.4rem] lg:text-[3.9rem]">
                 Your IT department,
                 <span className="relative block w-fit">
                   <span className="bg-gradient-to-r from-brand via-indigo-500 to-violet-500 bg-clip-text text-transparent">
