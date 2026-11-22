@@ -145,7 +145,8 @@ export default function BrowseProz() {
             name: `${p.first_name || p.firstName || "Pro"} ${p.last_name || p.lastName || "User"}`,
             location: p.location || p.city || "Remote",
             hourlyRate: Number(p.hourly_rate ?? 0),
-            rating: Number(p.rating ?? 5),
+            profile_image_url: p.profile_image_url || null,
+            rating: Number(p.rating ?? 0),
             reviews: Number(p.review_count ?? p.reviews ?? 0),
             experience: Number(p.years_experience ?? p.experience ?? 0),
             specialties: (() => {
@@ -179,7 +180,7 @@ export default function BrowseProz() {
               })
               return result
             })(),
-            description: p.bio || p.about || "Professional tech support specialist ready to help.",
+            description: p.bio || p.about || "",
             availability: p.availability || "Available",
           }))
         setProfessionals(mapped)
@@ -465,7 +466,9 @@ export default function BrowseProz() {
                   <CardContent className="p-4 sm:p-6">
                     <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
                       <div className="sm:flex-shrink-0">
-                        <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-lg text-sm font-medium mb-3 sm:mb-4">${pro.hourlyRate}/hr</div>
+                        {pro.hourlyRate > 0 && (
+                          <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-lg text-sm font-medium mb-3 sm:mb-4">${pro.hourlyRate}/hr</div>
+                        )}
                         <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-gray-200 dark:bg-gray-700 flex items-center justify-center border-2 border-white dark:border-gray-800 shadow-lg">
                           {pro.profile_image_url ? (
                             <img
@@ -493,13 +496,17 @@ export default function BrowseProz() {
                             <div className="flex items-center text-gray-600 dark:text-gray-300 mb-2"><MapPin className="w-4 h-4 mr-1" /><span className="text-sm">{pro.location}</span></div>
                           </div>
                           <div className="sm:text-right">
-                            <div className="flex items-center mb-1">
-                              <div className="flex">
-                                {[1, 2, 3, 4, 5].map((star) => (<Star key={star} className={`w-4 h-4 ${star <= pro.rating ? "text-yellow-400 fill-current" : "text-gray-300 dark:text-gray-600"}`} />))}
+                            {pro.reviews > 0 && (
+                              <div className="flex items-center mb-1">
+                                <div className="flex">
+                                  {[1, 2, 3, 4, 5].map((star) => (<Star key={star} className={`w-4 h-4 ${star <= pro.rating ? "text-yellow-400 fill-current" : "text-gray-300 dark:text-gray-600"}`} />))}
+                                </div>
+                                <span className="text-sm text-gray-600 dark:text-gray-300 ml-2">({pro.reviews} reviews)</span>
                               </div>
-                              <span className="text-sm text-gray-600 dark:text-gray-300 ml-2">({pro.reviews} reviews)</span>
-                            </div>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">{pro.experience} years experience</p>
+                            )}
+                            {pro.experience > 0 && (
+                              <p className="text-sm text-gray-500 dark:text-gray-400">{pro.experience} years experience</p>
+                            )}
                           </div>
                         </div>
 
@@ -527,7 +534,7 @@ export default function BrowseProz() {
                           ))}
                         </div>
 
-                        <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-4">{pro.description}</p>
+                        {pro.description && <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-4 line-clamp-3">{pro.description}</p>}
 
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                           <div className="flex items-center gap-2">
