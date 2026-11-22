@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { BellRing, CheckCircle2, Loader2, Mail, RefreshCw, Send, XCircle } from "lucide-react"
+import { BellRing, CheckCircle2, Clock, Loader2, Mail, RefreshCw, Send, XCircle } from "lucide-react"
 
 import {
   AlertDialog,
@@ -90,6 +90,26 @@ export function ProfileReminderCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {overview?.auto && (
+          <div
+            className={`flex items-start gap-3 rounded-lg border p-4 text-sm ${
+              overview.auto.enabled ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-slate-200 bg-slate-50 text-slate-700"
+            }`}
+          >
+            <Clock className="mt-0.5 h-4 w-4 shrink-0" />
+            <div>
+              <p className="font-medium">
+                Automatic reminders: {overview.auto.enabled ? "On" : "Off"}
+              </p>
+              <p className="mt-0.5">
+                {overview.auto.enabled
+                  ? `Sent ${overview.auto.schedule} to professionals who signed up at least ${overview.auto.min_account_age_days} day ago. Each person gets one at most every ${overview.auto.interval_days} days and ${overview.auto.max_reminders} in total.`
+                  : "Turn on with PROFILE_REMINDERS_AUTO=true in the server's .env. You can still send them yourself below."}
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4">
           <div>
             {loading && !overview ? (
@@ -128,6 +148,7 @@ export function ProfileReminderCard() {
                 <tr>
                   <th className="px-3 py-2 font-medium">Professional</th>
                   <th className="px-3 py-2 font-medium">Progress</th>
+                  <th className="px-3 py-2 font-medium">Reminded</th>
                   <th className="hidden px-3 py-2 font-medium md:table-cell">Still to do</th>
                 </tr>
               </thead>
@@ -140,6 +161,9 @@ export function ProfileReminderCard() {
                     </td>
                     <td className="whitespace-nowrap px-3 py-2 text-slate-600">
                       {r.steps_done} of {r.steps_total}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2 text-slate-600">
+                      {r.reminders_sent ? `${r.reminders_sent}×` : "Not yet"}
                     </td>
                     <td className="hidden px-3 py-2 text-xs text-slate-500 md:table-cell">{r.missing.join(", ")}</td>
                   </tr>

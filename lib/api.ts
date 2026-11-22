@@ -2306,6 +2306,7 @@ export type ProfileReminderRecipient = {
   steps_total: number
   missing: string[]
   last_reminded_at?: string | null
+  reminders_sent?: number
 }
 
 export type ProfileReminderOverview = {
@@ -2315,6 +2316,13 @@ export type ProfileReminderOverview = {
   skip_recent_days: number
   recipients: ProfileReminderRecipient[]
   preview_html: string
+  auto?: {
+    enabled: boolean
+    schedule: string
+    interval_days: number
+    max_reminders: number
+    min_account_age_days: number
+  }
 }
 
 export type ProfileReminderResult = { success: boolean; message: string; count: number }
