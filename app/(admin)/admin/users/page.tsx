@@ -225,7 +225,8 @@ export default function AdminUsersPage() {
       setSelectedAccount(null)
       setIsAccountView(false)
 
-      if (user.is_superuser || !user.is_verified) {
+      // Only an explicit "not verified" means there can't be a profile yet.
+      if (user.is_superuser || user.is_verified === false) {
         setSelectedAccount(user)
         setIsAccountView(true)
         setIsProfileOpen(true)
@@ -598,7 +599,7 @@ export default function AdminUsersPage() {
                 <p className="text-muted-foreground">
                   Super admins manage the platform and do not have a public professional profile.
                 </p>
-              ) : !selectedAccount.is_verified ? (
+              ) : selectedAccount.is_verified === false ? (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-amber-900">
                   <p className="font-medium">Signed up, but hasn&apos;t verified their email yet.</p>
                   <p className="mt-1 text-[13px]">

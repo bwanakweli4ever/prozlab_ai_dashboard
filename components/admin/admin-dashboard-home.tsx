@@ -35,6 +35,7 @@ import {
   YAxis,
 } from "recharts"
 import { cn, getProfileImageUrl } from "@/lib/utils"
+import { computeProfileCompletion } from "@/lib/profile-completion"
 
 export interface DashboardProfile {
   id: string
@@ -47,6 +48,18 @@ export interface DashboardProfile {
   specialties?: string[]
   rating?: number
   created_at: string
+  // Fields behind the completion % (same checklist as the professional's dashboard)
+  bio?: string | null
+  phone_number?: string | null
+  skills?: string[] | null
+  hourly_rate?: number | null
+  years_experience?: number | null
+  linkedin?: string | null
+  website?: string | null
+  education?: string | null
+  certifications?: string | null
+  resume_filename?: string | null
+  skill_verification_status?: string | null
 }
 
 interface AdminDashboardHomeProps {
@@ -102,12 +115,9 @@ function daysAgo(d: string) {
   return n <= 0 ? "Today" : n === 1 ? "1 day ago" : `${n} days ago`
 }
 
+/** The same completion % the professional sees on their own dashboard. */
 function completionScore(p: DashboardProfile) {
-  let s = 50
-  if (p.verification_status === "verified") s += 30
-  if (p.rating) s += Math.min(p.rating * 8, 20)
-  if (p.location) s += 5
-  return Math.min(Math.round(s), 99)
+  return computeProfileCompletion(p as unknown as Parameters<typeof computeProfileCompletion>[0]).percentage
 }
 
 export function AdminDashboardHome({

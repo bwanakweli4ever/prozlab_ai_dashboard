@@ -94,6 +94,17 @@ export default function AdminDashboardPage() {
             specialties: Array.isArray(p.specialties) ? (p.specialties as string[]) : [],
             rating: typeof p.rating === "number" ? p.rating : undefined,
             created_at: String(p.created_at ?? new Date().toISOString()),
+            bio: (p.bio as string | null | undefined) ?? null,
+            phone_number: (p.phone_number as string | null | undefined) ?? null,
+            skills: Array.isArray(p.skills) ? (p.skills as string[]) : null,
+            hourly_rate: typeof p.hourly_rate === "number" ? p.hourly_rate : null,
+            years_experience: typeof p.years_experience === "number" ? p.years_experience : null,
+            linkedin: (p.linkedin as string | null | undefined) ?? null,
+            website: (p.website as string | null | undefined) ?? null,
+            education: (p.education as string | null | undefined) ?? null,
+            certifications: (p.certifications as string | null | undefined) ?? null,
+            resume_filename: (p.resume_filename as string | null | undefined) ?? null,
+            skill_verification_status: (p.skill_verification_status as string | null | undefined) ?? null,
           }))
         )
       } catch (error) {
