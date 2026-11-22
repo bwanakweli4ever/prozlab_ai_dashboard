@@ -6,6 +6,7 @@ import { prozApi, resumeApi } from "@/lib/api"
 import { normalizeMediaUrl } from "@/lib/utils"
 import { clearPendingOnboarding, peekPendingOnboarding } from "@/lib/pending-onboarding"
 import { clearPendingCv, peekPendingCv } from "@/lib/pending-cv"
+import { computeProfileCompletion } from "@/lib/profile-completion"
 import { useAuth } from "./auth-context"
 import type { ProzProfileCreate, ProzProfileResponse, ProzProfileUpdate } from "@/types/api"
 
@@ -199,61 +200,8 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [token, user, createProfile])
 
-  const profileCompletion = useMemo((): { percentage: number; missingFields: string[] } => {
-    if (!profile) {
-      return { percentage: 0, missingFields: [] }
-    }
-
-    const requiredFields = [
-      'first_name',
-      'last_name', 
-      'email',
-      'phone_number',
-      'bio',
-      'location',
-      'years_experience',
-      'hourly_rate',
-      'availability',
-      'education',
-      'certifications',
-      'website',
-      'linkedin',
-      'preferred_contact_method'
-    ]
-
-    const optionalFields: string[] = []
-
-    const missingRequired: string[] = []
-    const missingOptional: string[] = []
-
-    // Check required fields
-    requiredFields.forEach(field => {
-      const value = profile[field as keyof Profile]
-      if (!value || (typeof value === 'string' && value.trim() === '')) {
-        missingRequired.push(field)
-      }
-    })
-
-    // Check optional fields
-    optionalFields.forEach(field => {
-      const value = profile[field as keyof Profile]
-      if (!value || (typeof value === 'string' && value.trim() === '')) {
-        missingOptional.push(field)
-      }
-    })
-
-    // Calculate percentage (all fields are required for 100%)
-    const totalRequired = requiredFields.length
-    const completedRequired = totalRequired - missingRequired.length
-    
-    // All fields are required for 100% completion
-    const totalPercentage = Math.round((completedRequired / totalRequired) * 100)
-
-    return {
-      percentage: totalPercentage,
-      missingFields: [...missingRequired, ...missingOptional],
-    }
-  }, [profile])
+  // One checklist for every progress number in the dashboard (see lib/profile-completion.ts).
+  const profileCompletion = useMemo(() => computeProfileCompletion(profile), [profile])
 
   const calculateProfileCompletion = useCallback(
     () => profileCompletion,

@@ -1,7 +1,7 @@
 // app/(dashboard)/dashboard/profile/ai-assist/page.tsx
 "use client"
 
-import { useState } from "react"
+import { useCallback, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,6 +11,8 @@ import { toast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
 import { API_BASE_URL, describeAiError, resumeApi } from "@/lib/api"
 import { ResumeCard } from "@/components/dashboard/resume-card"
+import { ProfileCelebration } from "@/components/dashboard/profile-celebration"
+import { computeProfileCompletion } from "@/lib/profile-completion"
 import { useAuth } from "@/contexts/auth-context"
 import { useProfile } from "@/contexts/profile-context"
 import Link from "next/link"
@@ -27,6 +29,8 @@ export default function AIAssistProfilePage() {
   const { profile, fetchProfile } = useProfile()
   const [loading, setLoading] = useState(false)
   const [skills, setSkills] = useState<string[]>([])
+  const [celebration, setCelebration] = useState<{ before: number; after: number; added: string[] } | null>(null)
+
   const [result, setResult] = useState<any>(null)
   const [bio, setBio] = useState("")
   const [location, setLocation] = useState("")
@@ -41,6 +45,7 @@ export default function AIAssistProfilePage() {
   const [experiences, setExperiences] = useState<any[]>([])
   const [educationItems, setEducationItems] = useState<any[]>([])
   const router = useRouter()
+  const goToProfile = useCallback(() => router.push("/dashboard/profile/view"), [router])
 
   const analyzeCv = async () => {
     if (!isAuthenticated || !token) {
@@ -122,9 +127,20 @@ export default function AIAssistProfilePage() {
         }
         throw new Error(typeof detail === "string" ? detail : "Failed to apply profile")
       }
+      const saved = await res.json()
+      const before = computeProfileCompletion(profile).percentage
+      const after = computeProfileCompletion({ ...(profile || {}), ...saved }).percentage
+      const added = [
+        bio && "Bio",
+        skills.length > 0 && "Skills",
+        location && "Location",
+        phoneNumber && "Phone",
+        yearsExperience !== "" && "Experience",
+        (linkedin || website) && "Links",
+        (education || certifications) && "Education",
+      ].filter(Boolean) as string[]
       await fetchProfile()
-      toast({ title: "Profile saved", description: "Your profile is ready to edit and verify." })
-      router.push("/dashboard/profile/view?edit=1")
+      setCelebration({ before, after, added })
     } catch (e: any) {
       toast({ title: "Update failed", description: e?.message || "Try again", variant: "destructive" })
     } finally {
@@ -165,6 +181,14 @@ export default function AIAssistProfilePage() {
 
   return (
     <div className="relative mx-auto max-w-5xl space-y-6">
+      {celebration && (
+        <ProfileCelebration
+          before={celebration.before}
+          after={celebration.after}
+          added={celebration.added}
+          onContinue={goToProfile}
+        />
+      )}
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/20 backdrop-blur-sm">
           <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-lg">
@@ -450,9 +474,11 @@ export default function AIAssistProfilePage() {
                 </div>
               )}
 
-              <div className="flex justify-end border-t border-slate-100 pt-4">
-                <Button onClick={applyUpdates} disabled={loading} className="bg-brand hover:bg-brand-dark">
-                  {loading ? "Applying..." : "Apply to Profile"}
+              <div className="sticky bottom-0 z-10 -mx-6 flex flex-col gap-2 border-t border-slate-100 bg-white/95 px-6 py-4 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-[13px] text-slate-500">Check the fields above, then save them to your profile.</p>
+                <Button onClick={applyUpdates} disabled={loading} className="h-11 bg-brand px-6 text-white hover:bg-brand-dark">
+                  {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                  {loading ? "Saving..." : "Apply to my profile"}
                 </Button>
               </div>
             </div>

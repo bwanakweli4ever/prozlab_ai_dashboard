@@ -26,6 +26,8 @@ import { toast } from "@/components/ui/use-toast"
 import { useAuth } from "@/contexts/auth-context"
 import { useProfile } from "@/contexts/profile-context"
 import {
+  isPrivateDocumentUrl,
+  openPrivateDocument,
   verificationApi,
   type VerificationEvidence,
   type VerificationEvidenceType,
@@ -78,7 +80,7 @@ function normalizeGitHubUrl(value: string): string {
   const trimmed = value.trim()
   if (!trimmed) return ""
   if (/^https?:\/\//i.test(trimmed)) return trimmed.replace(/\/+$/, "")
-  if (trimmed.startsWith("github.com/")) return `https://${trimmed.replace(/\/+$/, "")}`
+  if (/^(www\.)?github\.com\//i.test(trimmed)) return `https://${trimmed.replace(/^www\./i, "").replace(/\/+$/, "")}`
   if (!trimmed.includes("/") && /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/.test(trimmed)) {
     return `https://github.com/${trimmed}`
   }
@@ -259,63 +261,38 @@ export default function SkillsVerificationPage() {
     setIdentityDocLabel(null)
   }
 
-  const handleValidateGitHub = async () => {
-    if (!token || !url.trim()) {
-      toast({ title: "Enter your GitHub profile URL", variant: "destructive" })
-      return
-    }
-
-    const normalizedUrl = normalizeGitHubUrl(url)
-    setUrl(normalizedUrl)
-    setGithubChecking(true)
-    setGithubResult(null)
-
-    try {
-      const result = await verificationApi.validateGitHub(token, normalizedUrl)
-      setGithubResult(result)
-      if (result.valid) {
-        if (title.trim().length < 2) setTitle(`GitHub — ${result.username}`)
-        toast({ title: "GitHub profile linked", description: result.message })
-      } else {
-        toast({ title: "Could not verify GitHub", description: result.message, variant: "destructive" })
-      }
-    } catch (error) {
-      toast({
-        title: "Verification failed",
-        description: error instanceof Error ? error.message : "Try again",
-        variant: "destructive",
-      })
-    } finally {
-      setGithubChecking(false)
-    }
-  }
-
   const handleAddEvidence = async () => {
     if (!token) return
 
+    // GitHub: any profile or repository link works. Check it here if it wasn't checked already.
+    let ghResult = githubResult
     if (activeType === "github") {
       const normalizedUrl = normalizeGitHubUrl(url)
       if (!normalizedUrl) {
-        toast({ title: "Enter your GitHub profile URL", variant: "destructive" })
+        toast({ title: "Paste your GitHub link", variant: "destructive" })
         return
       }
-      if (!githubResult?.valid) {
-        toast({
-          title: "Verify GitHub first",
-          description: "Link your public GitHub profile and verify it before adding this evidence.",
-          variant: "destructive",
-        })
-        return
-      }
-      const verifiedUsername = githubResult.username?.toLowerCase()
-      const inputUsername = normalizeGitHubUrl(url).match(/github\.com\/([^/?#]+)/i)?.[1]?.toLowerCase()
-      if (verifiedUsername && inputUsername && verifiedUsername !== inputUsername) {
-        toast({
-          title: "GitHub URL changed",
-          description: "Verify the updated GitHub profile URL before adding evidence.",
-          variant: "destructive",
-        })
-        return
+      const inputUsername = normalizedUrl.match(/github\.com\/([^/?#]+)/i)?.[1]?.toLowerCase()
+      const checkedUsername = ghResult?.username?.toLowerCase()
+      if (!ghResult?.valid || (inputUsername && checkedUsername && inputUsername !== checkedUsername)) {
+        setGithubChecking(true)
+        try {
+          ghResult = await verificationApi.validateGitHub(token, normalizedUrl)
+          setGithubResult(ghResult)
+        } catch (error) {
+          toast({
+            title: "Could not check GitHub",
+            description: error instanceof Error ? error.message : "Try again in a moment.",
+            variant: "destructive",
+          })
+          return
+        } finally {
+          setGithubChecking(false)
+        }
+        if (!ghResult?.valid) {
+          toast({ title: "Could not verify GitHub", description: ghResult?.message, variant: "destructive" })
+          return
+        }
       }
     }
 
@@ -385,7 +362,7 @@ export default function SkillsVerificationPage() {
         }
       }
 
-      const resolvedTitle = resolveEvidenceTitle(title, activeType, githubResult)
+      const resolvedTitle = resolveEvidenceTitle(title, activeType, ghResult)
       const payload: Record<string, unknown> = {
         type: activeType,
         title: resolvedTitle,
@@ -566,7 +543,7 @@ export default function SkillsVerificationPage() {
             {EVIDENCE_TYPES.filter((t) => t.section === section).map((t) => (
               <TabsContent key={t.id} value={t.id} className="space-y-3 pt-2">
                 <p className="text-[13px] text-slate-500">{t.hint}</p>
-                <div>
+                <div className={["github", "linkedin", "identity_document"].includes(t.id) ? "hidden" : undefined}>
                   <Label>Title</Label>
                   <Input
                     className={dashboardInputClass}
@@ -592,25 +569,10 @@ export default function SkillsVerificationPage() {
                     />
                     {t.id === "github" && (
                       <div className="mt-2 space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={githubChecking || !url.trim()}
-                            onClick={handleValidateGitHub}
-                          >
-                            {githubChecking ? (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                              <Github className="mr-2 h-4 w-4" />
-                            )}
-                            Verify GitHub profile
-                          </Button>
-                          <span className="text-[11px] text-slate-500">
-                            We check public repositories — not follower counts.
-                          </span>
-                        </div>
+                        <p className="text-[12px] text-slate-500">
+                          Paste your GitHub profile or any of your repositories. We check your public repositories when
+                          you add it.
+                        </p>
                         {githubResult && <GitHubPreviewCard result={githubResult} />}
                       </div>
                     )}
@@ -711,11 +673,11 @@ export default function SkillsVerificationPage() {
 
           <Button
             onClick={handleAddEvidence}
-            disabled={submitting}
-            className="bg-brand hover:bg-brand-dark"
+            disabled={submitting || githubChecking}
+            className="bg-brand text-white hover:bg-brand-dark"
           >
-            <Plus className="mr-2 h-4 w-4" />
-            Add evidence
+            {submitting || githubChecking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+            {githubChecking ? "Checking GitHub…" : "Add evidence"}
           </Button>
         </CardContent>
       </Card>
@@ -763,7 +725,20 @@ export default function SkillsVerificationPage() {
                     )}
                     {item.url && (
                       item.type === "identity_document" ? (
-                        <p className="mt-1 text-[13px] text-emerald-700">Secure identity document uploaded for admin review</p>
+                        <p className="mt-1 text-[13px] text-emerald-700">
+                          Private identity document, visible only to you and Prozlab admins.
+                          {token && isPrivateDocumentUrl(item.url) && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                void openPrivateDocument(token, item.url!).catch(() => undefined)
+                              }}
+                              className="ml-2 font-medium text-brand hover:underline"
+                            >
+                              View
+                            </button>
+                          )}
+                        </p>
                       ) : (
                         <a
                           href={normalizeMediaUrl(item.url) || item.url}

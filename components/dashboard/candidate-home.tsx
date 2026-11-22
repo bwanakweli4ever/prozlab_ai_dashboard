@@ -97,7 +97,7 @@ export function CandidateHome() {
 
   const firstName = user?.first_name || "there"
   const [skills, setSkills] = useState<string[]>([])
-  const [completion, setCompletion] = useState(35)
+  const [completion, setCompletion] = useState(0)
 
   useEffect(() => {
     let nextSkills: string[] = []
@@ -114,7 +114,7 @@ export function CandidateHome() {
     setSkills(nextSkills)
 
     const { percentage } = calculateProfileCompletion()
-    setCompletion(percentage > 0 ? percentage : 35)
+    setCompletion(percentage)
   }, [profile, calculateProfileCompletion])
 
   const currentStep = deriveOnboardingStep(profile, skills)

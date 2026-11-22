@@ -2238,6 +2238,40 @@ export const resumeApi = {
   },
 }
 
+// ---- Identity documents (private; owner or admin only) ----
+
+export const VERIFICATION_DOCUMENT_PATH = "/api/v1/proz/verification/documents/"
+
+/** True for an identity document stored privately (opened with openPrivateDocument, never as a plain link). */
+export function isPrivateDocumentUrl(url?: string | null): boolean {
+  return !!url && url.includes(VERIFICATION_DOCUMENT_PATH)
+}
+
+/**
+ * Opens a private document in a new tab. The file is fetched with the signed-in user's token,
+ * so the link itself never works on its own. Falls back to a download if pop-ups are blocked.
+ */
+export async function openPrivateDocument(token: string, url: string): Promise<void> {
+  const path = url.slice(url.indexOf(VERIFICATION_DOCUMENT_PATH))
+  // Open the tab synchronously (inside the click) so pop-up blockers allow it.
+  const tab = typeof window !== "undefined" ? window.open("", "_blank") : null
+  try {
+    const response = await fetch(`${API_BASE_URL}${path}`, { headers: { Authorization: `Bearer ${token}` } })
+    if (!response.ok) await handleResponse(response)
+    const blob = await response.blob()
+    const objectUrl = URL.createObjectURL(blob)
+    if (tab) {
+      tab.location.href = objectUrl
+    } else {
+      saveBlob(blob, path.split("/").pop() || "document")
+    }
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000)
+  } catch (error) {
+    tab?.close()
+    throw error
+  }
+}
+
 function fileNameFrom(response: Response, fallback: string): string {
   const header = response.headers.get("content-disposition") || ""
   const star = /filename\*=utf-8''([^;]+)/i.exec(header)

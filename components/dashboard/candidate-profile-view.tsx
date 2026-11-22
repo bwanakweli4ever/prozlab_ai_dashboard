@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button"
 import { useProfile } from "@/contexts/profile-context"
 import type { ProzProfileResponse } from "@/types/api"
 import { cn, getProfileImageUrl } from "@/lib/utils"
+import { computeProfileCompletion } from "@/lib/profile-completion"
 
 type ExtendedProfile = ProzProfileResponse & {
   skills?: string[]
@@ -288,27 +289,7 @@ interface CandidateProfileViewProps {
 }
 
 function estimateProfileCompletion(profile: ExtendedProfile): number {
-  const fields: (keyof ExtendedProfile)[] = [
-    "first_name",
-    "last_name",
-    "email",
-    "phone_number",
-    "bio",
-    "location",
-    "years_experience",
-    "hourly_rate",
-    "availability",
-    "education",
-    "certifications",
-    "website",
-    "linkedin",
-    "preferred_contact_method",
-  ]
-  const completed = fields.filter((field) => {
-    const value = profile[field]
-    return value !== null && value !== undefined && String(value).trim() !== ""
-  }).length
-  return Math.round((completed / fields.length) * 100)
+  return computeProfileCompletion(profile).percentage
 }
 
 function profileEditHref(section?: "personal" | "summary" | "experience" | "education" | "contact") {

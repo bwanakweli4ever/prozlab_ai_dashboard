@@ -22,7 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/auth-context"
-import { adminApi } from "@/lib/api"
+import { adminApi, isPrivateDocumentUrl, openPrivateDocument } from "@/lib/api"
 import type { SkillVerificationDetail, SkillVerificationListItem } from "@/types/api"
 import { cn } from "@/lib/utils"
 
@@ -328,11 +328,30 @@ export default function AdminAssessmentsPage() {
                         <p className="text-[13px] font-medium text-slate-900">
                           {EVIDENCE_LABELS[ev.type] || ev.type}: {ev.title}
                         </p>
-                        {ev.url && (
+                        {ev.url && isPrivateDocumentUrl(ev.url) ? (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (!token) return
+                              try {
+                                await openPrivateDocument(token, ev.url!)
+                              } catch (e) {
+                                toast({
+                                  title: "Could not open the document",
+                                  description: e instanceof Error ? e.message : "Try again",
+                                  variant: "destructive",
+                                })
+                              }
+                            }}
+                            className="text-[12px] font-medium text-brand hover:underline"
+                          >
+                            View document (private)
+                          </button>
+                        ) : ev.url ? (
                           <a href={ev.url} target="_blank" rel="noreferrer" className="text-[12px] text-brand hover:underline">
                             {ev.url}
                           </a>
-                        )}
+                        ) : null}
                         {ev.description && (
                           <p className="mt-1 text-[12px] text-slate-500">{ev.description}</p>
                         )}
