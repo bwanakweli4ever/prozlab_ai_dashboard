@@ -28,7 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/components/ui/use-toast"
 import { useAuth } from "@/contexts/auth-context"
 import { useProfile } from "@/contexts/profile-context"
-import { mediaApi, prozApi } from "@/lib/api"
+import { describeAiError, mediaApi, prozApi } from "@/lib/api"
 import {
   dashboardCardClass,
   dashboardInputClass,
@@ -126,6 +126,8 @@ type AiResult = {
   suggestions?: string[]
   suggested_updates?: Record<string, unknown>
   rephrased_bio?: string[]
+  ai_used?: boolean
+  ai_error?: string | null
 }
 
 function formToDraft(values: FormValues, email?: string | null) {
@@ -276,8 +278,14 @@ export function EditProfileSections({
         suggestions: result.suggestions,
         suggested_updates: result.suggested_updates,
         rephrased_bio: result.rephrased_bio,
+        ai_used: result.ai_used,
+        ai_error: result.ai_error,
       })
-      toast({ title: "AI suggestions ready", description: "Review and apply improvements below." })
+      toast(
+        result.ai_used === false
+          ? { title: "AI isn't available right now", description: `${describeAiError(result.ai_error)} Showing basic checks only.` }
+          : { title: "AI suggestions ready", description: "Review and apply improvements below." },
+      )
     } catch (error) {
       toast({
         title: "AI assist failed",
@@ -594,12 +602,17 @@ export function EditProfileSections({
                 <div className="mb-3 flex items-center justify-between">
                   <p className="flex items-center gap-2 text-[13px] font-semibold text-violet-800">
                     <Sparkles className="h-4 w-4" />
-                    AI suggestions for this section
+                    {aiResult.ai_used === false ? "Basic checks for this section" : "AI suggestions for this section"}
                   </p>
                   <button type="button" onClick={() => setAiResult(null)} className="text-slate-400 hover:text-slate-600">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
+                {aiResult.ai_used === false && (
+                  <p className="mb-3 text-[12px] text-amber-800">
+                    AI isn&apos;t available right now. {describeAiError(aiResult.ai_error)}
+                  </p>
+                )}
                 {aiResult.suggestions && aiResult.suggestions.length > 0 && (
                   <ul className="mb-3 list-disc space-y-1 pl-5 text-[12px] text-slate-600">
                     {aiResult.suggestions.slice(0, 4).map((s, i) => (

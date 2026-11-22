@@ -33,6 +33,9 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { cn, getProfileImageUrl } from "@/lib/utils"
+import { useAuth } from "@/contexts/auth-context"
+import { resumeApi } from "@/lib/api"
+import { useState } from "react"
 
 export interface TalentProfile {
   id: string
@@ -48,6 +51,8 @@ export interface TalentProfile {
   created_at: string
   updated_at?: string
   profile_image_url?: string
+  /** Original name of the CV saved on the profile; download through the admin endpoint. */
+  resume_filename?: string
   education?: string
   certifications?: string
   website?: string
@@ -590,6 +595,8 @@ export function TalentVerificationBoard({
                 </div>
               )}
 
+              {selectedProfile.resume_filename && <AdminCvRow profile={selectedProfile} />}
+
               {(selectedProfile.website || selectedProfile.linkedin) && (
                 <div className="border-b border-slate-100 px-4 py-3">
                   <p className="mb-2 text-[12px] font-semibold text-slate-700">Portfolio Highlights</p>
@@ -668,6 +675,41 @@ export function TalentVerificationBoard({
           )}
         </aside>
       )}
+    </div>
+  )
+}
+
+
+function AdminCvRow({ profile }: { profile: TalentProfile }) {
+  const { token } = useAuth()
+  const [downloading, setDownloading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  return (
+    <div className="border-b border-slate-100 px-4 py-3">
+      <p className="mb-2 text-[12px] font-semibold text-slate-700">CV</p>
+      <div className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2">
+        <span className="truncate text-[12px] text-slate-700">{profile.resume_filename}</span>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={!token || downloading}
+          onClick={async () => {
+            if (!token) return
+            setDownloading(true)
+            setError(null)
+            try {
+              await resumeApi.downloadForProfile(token, profile.id, profile.resume_filename || "cv")
+            } catch (e) {
+              setError(e instanceof Error ? e.message : "Download failed")
+            } finally {
+              setDownloading(false)
+            }
+          }}
+        >
+          {downloading ? "Downloading…" : "Download"}
+        </Button>
+      </div>
+      {error && <p className="mt-1 text-[11px] text-red-600">{error}</p>}
     </div>
   )
 }

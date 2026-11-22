@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import {
   ArrowRight,
   ArrowLeft,
@@ -21,6 +21,7 @@ import {
   Star,
   AlertCircle,
   MailCheck,
+  X,
 } from "lucide-react"
 import toastHot from "react-hot-toast"
 import { toast as toastNotify } from "react-toastify"
@@ -32,11 +33,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
-import { useProfile } from "@/contexts/profile-context"
 import { toast } from "@/components/ui/use-toast"
 import { EXPERIENCE_LEVELS } from "@/lib/constants"
-import { emailApi, prozApi } from "@/lib/api"
-import { savePendingOnboarding } from "@/lib/pending-onboarding"
+import { RESUME_ACCEPT, emailApi, prozApi, validateResumeFile } from "@/lib/api"
+import { clearPendingOnboarding, savePendingOnboarding } from "@/lib/pending-onboarding"
+import { clearPendingCv, savePendingCv } from "@/lib/pending-cv"
 import type { ProzProfileCreate } from "@/types/api"
 import {
   OnboardingShell,
@@ -83,7 +84,6 @@ export function RegisterWizard() {
   const [currentStep, setCurrentStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const { register: authRegister, isAuthenticated, isLoading: authLoading, user } = useAuth()
-  const { createProfile } = useProfile()
 
   const [formData, setFormData] = useState({
     skills: [] as string[],
@@ -93,6 +93,11 @@ export function RegisterWizard() {
     phoneNumber: "",
     availability: "full-time",
   })
+  /** CV picked on step 5; uploaded to the profile at first sign-in (see lib/pending-cv.ts). */
+  const [cvFile, setCvFile] = useState<File | null>(null)
+  const [cvError, setCvError] = useState<string | null>(null)
+  const [cvDragging, setCvDragging] = useState(false)
+  const cvInputRef = useRef<HTMLInputElement>(null)
   const [specialties, setSpecialties] = useState<string[]>([])
   const [specialtiesLoading, setSpecialtiesLoading] = useState(true)
   const [specialtiesError, setSpecialtiesError] = useState<string | null>(null)
@@ -129,6 +134,13 @@ export function RegisterWizard() {
       router.replace(user?.is_superuser ? "/admin" : "/dashboard")
     }
   }, [isAuthenticated, authLoading, router, user, currentStep])
+
+  const pickCv = (file: File | undefined | null) => {
+    if (!file) return
+    const problem = validateResumeFile(file)
+    setCvError(problem)
+    setCvFile(problem ? null : file)
+  }
 
   const nextStep = () => setCurrentStep((s) => Math.min(s + 1, 8))
   const prevStep = () => setCurrentStep((s) => Math.max(s - 1, 1))
@@ -197,8 +209,13 @@ export function RegisterWizard() {
       years_experience: experienceMapping[onboardingData.experience] || 1,
       hourly_rate: 50,
       availability: onboardingData.availability || "full-time",
-      education: (onboardingData.skills || []).join(", ") || "Self-taught",
-      certifications: (onboardingData.skills || []).join(", ") || "",
+      education: "",
+      certifications: "",
+      skills: onboardingData.skills || [],
+      work_types: onboardingData.workTypes || [],
+      experience_level: onboardingData.experience || undefined,
+      portfolio_links: onboardingData.portfolio || [],
+      onboarding_completed: true,
       website: onboardingData.portfolio?.[0] || "",
       linkedin: "",
       preferred_contact_method: "email",
@@ -226,6 +243,10 @@ export function RegisterWizard() {
     try {
       saveOnboardingData()
       const profilePayload = buildProfilePayload(values)
+      // The profile (and CV) are created on this account's first signed-in load, whether or not
+      // the API asks for email verification first. See contexts/profile-context.tsx.
+      if (profilePayload) savePendingOnboarding(values.email, profilePayload)
+      if (cvFile) await savePendingCv(values.email, cvFile)
       const result = await authRegister({
         email: values.email,
         password: values.password,
@@ -234,8 +255,6 @@ export function RegisterWizard() {
       })
 
       if (result.status === "verification_required") {
-        // Keep the wizard answers; the profile is created on this account's first sign-in.
-        if (profilePayload) savePendingOnboarding(values.email, profilePayload)
         sessionStorage.removeItem("onboardingData")
         setVerificationEmail(values.email)
         setCurrentStep(8)
@@ -243,17 +262,12 @@ export function RegisterWizard() {
       }
 
       toast({ title: "Registration successful", description: "Setting up your profile..." })
-
-      if (profilePayload) {
-        try {
-          await createProfile(profilePayload)
-          sessionStorage.removeItem("onboardingData")
-        } catch {
-          /* profile creation optional */
-        }
-      }
+      sessionStorage.removeItem("onboardingData")
       setCurrentStep(8)
     } catch (error: unknown) {
+      // No account was created, so don't leave these answers waiting for whoever signs in with this email.
+      clearPendingOnboarding()
+      void clearPendingCv()
       const message = error instanceof Error ? error.message : "Registration failed. Please try again."
       setSignupError(message)
 
@@ -485,31 +499,91 @@ export function RegisterWizard() {
           <OnboardingCard step={5} time="< 2 min">
             <div className="text-center">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-brand/10">
-                <Upload className="h-8 w-8 text-brand" />
+                <FileText className="h-8 w-8 text-brand" />
               </div>
-              <h2 className="text-[20px] font-bold text-slate-900">Showcase your best work</h2>
+              <h2 className="text-[20px] font-bold text-slate-900">Add your CV and best work</h2>
               <p className="mt-2 text-[13px] text-slate-600">
-                Add your portfolio, projects, or links so clients can see your impact.
+                Your CV stays private to you and our team. Our AI uses it to fill in your profile.
               </p>
-              <div className="mt-5 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 px-4 py-8">
-                <Upload className="mx-auto h-8 w-8 text-slate-400" />
-                <p className="mt-2 text-[12px] font-medium text-slate-600">
-                  Upload or drop files here
+
+              <input
+                ref={cvInputRef}
+                type="file"
+                accept={RESUME_ACCEPT}
+                className="sr-only"
+                aria-label="Choose your CV"
+                onChange={(e) => {
+                  pickCv(e.target.files?.[0])
+                  e.target.value = ""
+                }}
+              />
+              {cvFile ? (
+                <div className="mt-5 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-left">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white text-emerald-600 shadow-sm">
+                    <Check className="h-5 w-5" strokeWidth={3} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[13px] font-semibold text-slate-800">{cvFile.name}</p>
+                    <p className="text-[11px] text-slate-500">
+                      {(cvFile.size / (1024 * 1024)).toFixed(1)} MB · saved to your profile when you sign in
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCvFile(null)}
+                    className="rounded-lg p-1.5 text-slate-500 hover:bg-white hover:text-slate-800"
+                    aria-label="Remove CV"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => cvInputRef.current?.click()}
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                    setCvDragging(true)
+                  }}
+                  onDragLeave={() => setCvDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    setCvDragging(false)
+                    pickCv(e.dataTransfer.files?.[0])
+                  }}
+                  className={`mt-5 block w-full rounded-xl border-2 border-dashed px-4 py-7 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand ${
+                    cvDragging ? "border-brand bg-brand/5" : "border-slate-200 bg-slate-50 hover:border-brand/40 hover:bg-brand/5"
+                  }`}
+                >
+                  <Upload className="mx-auto h-7 w-7 text-brand" />
+                  <span className="mt-2 block text-[13px] font-semibold text-slate-700">
+                    Upload your CV <span className="font-normal text-slate-500">or drop it here</span>
+                  </span>
+                  <span className="mt-0.5 block text-[11px] text-slate-400">PDF or Word, up to 10 MB</span>
+                </button>
+              )}
+              {cvError && (
+                <p role="alert" className="mt-2 flex items-center justify-center gap-1.5 text-[12px] text-red-600">
+                  <AlertCircle className="h-3.5 w-3.5" /> {cvError}
                 </p>
-                <p className="text-[11px] text-slate-400">PDF, PPT, DOC, Images — or add a link</p>
-              </div>
+              )}
+
+              <label className="mt-4 block text-left text-[12px] font-medium text-slate-600" htmlFor="portfolio-link">
+                Portfolio, GitHub or LinkedIn <span className="font-normal text-slate-400">(optional)</span>
+              </label>
               <Input
+                id="portfolio-link"
                 placeholder="https://your-portfolio.com"
                 value={formData.portfolioLink}
                 onChange={(e) => setFormData((p) => ({ ...p, portfolioLink: e.target.value }))}
-                className={`mt-3 ${wizardInputClass}`}
+                className={`mt-1.5 ${wizardInputClass}`}
               />
               <div className="mt-4 flex gap-3">
                 <button type="button" onClick={prevStep} className="flex flex-1 items-center justify-center gap-1 rounded-xl border border-slate-200 py-3 text-[14px] font-medium text-slate-600 hover:bg-slate-50">
                   <ArrowLeft className="h-4 w-4" /> Back
                 </button>
                 <button type="button" onClick={nextStep} className="flex-[2] rounded-xl border-2 border-brand/30 py-3 text-[14px] font-semibold text-brand hover:bg-brand/5">
-                  Add Portfolio
+                  {cvFile || formData.portfolioLink ? "Continue" : "Skip for now"}
                 </button>
               </div>
             </div>

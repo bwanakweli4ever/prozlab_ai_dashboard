@@ -11,6 +11,7 @@ import {
   EditProfileSections,
   type SectionId,
 } from "@/components/dashboard/edit-profile-sections"
+import { ResumeCard } from "@/components/dashboard/resume-card"
 
 const SECTION_IDS: SectionId[] = ["personal", "summary", "experience", "education", "contact"]
 
@@ -142,7 +143,10 @@ function ViewProfilePageContent() {
           onPreview={closeEdit}
         />
       ) : (
-        <CandidateProfileView profile={profile} onEdit={openEdit} />
+        <>
+          <ResumeCard className="mb-5" />
+          <CandidateProfileView profile={profile} onEdit={openEdit} />
+        </>
       )}
     </div>
   )

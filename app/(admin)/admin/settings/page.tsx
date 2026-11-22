@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { EmailDeliveryCard } from "@/components/admin/email-delivery-card"
+import { ProfileReminderCard } from "@/components/admin/profile-reminder-card"
 
 export default function AdminSettingsPage() {
   return (
@@ -28,6 +29,7 @@ export default function AdminSettingsPage() {
 
         <TabsContent value="email" className="space-y-4">
           <EmailDeliveryCard />
+          <ProfileReminderCard />
         </TabsContent>
 
         <TabsContent value="general" className="space-y-4">

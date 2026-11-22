@@ -109,7 +109,7 @@ export const DashboardSidebar = React.forwardRef<
       ]
 
   const isActive = (href: string) => {
-    if (href === "/dashboard") return pathname === "/dashboard"
+    if (href === "/dashboard" || href === "/admin") return pathname === href
     return pathname === href || pathname.startsWith(`${href}/`)
   }
 

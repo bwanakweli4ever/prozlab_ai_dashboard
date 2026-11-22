@@ -9,11 +9,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { toast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
-import { API_BASE_URL } from "@/lib/api"
+import { API_BASE_URL, describeAiError, resumeApi } from "@/lib/api"
+import { ResumeCard } from "@/components/dashboard/resume-card"
 import { useAuth } from "@/contexts/auth-context"
 import { useProfile } from "@/contexts/profile-context"
 import Link from "next/link"
-import { ArrowLeft, Loader2, Sparkles, Upload } from "lucide-react"
+import { AlertTriangle, ArrowLeft, Loader2, Sparkles, X } from "lucide-react"
 import {
   dashboardCardClass,
   dashboardInputClass,
@@ -23,9 +24,9 @@ import {
 
 export default function AIAssistProfilePage() {
   const { token, isAuthenticated, user } = useAuth()
-  const { fetchProfile } = useProfile()
-  const [file, setFile] = useState<File | null>(null)
+  const { profile, fetchProfile } = useProfile()
   const [loading, setLoading] = useState(false)
+  const [skills, setSkills] = useState<string[]>([])
   const [result, setResult] = useState<any>(null)
   const [bio, setBio] = useState("")
   const [location, setLocation] = useState("")
@@ -41,33 +42,15 @@ export default function AIAssistProfilePage() {
   const [educationItems, setEducationItems] = useState<any[]>([])
   const router = useRouter()
 
-  const handleUpload = async () => {
-    if (!isAuthenticated) {
+  const analyzeCv = async () => {
+    if (!isAuthenticated || !token) {
       toast({ title: "Please log in", description: "You need to be signed in to use AI Assist", variant: "destructive" })
       router.push("/login")
       return
     }
-    if (!file) {
-      toast({ title: "Please select a PDF resume" })
-      return
-    }
     setLoading(true)
     try {
-      const form = new FormData()
-      form.append("file", file)
-      const res = await fetch(`${API_BASE_URL}/api/v1/proz/ai/parse-resume`, {
-        method: "POST",
-        body: form,
-        credentials: "include",
-        headers: token ? { "Authorization": `Bearer ${token}` } : undefined,
-      })
-      if (res.status === 401) {
-        toast({ title: "Unauthorized", description: "Please log in again to continue", variant: "destructive" })
-        router.push("/login")
-        return
-      }
-      if (!res.ok) throw new Error(await res.text())
-      const data = await res.json()
+      const data = await resumeApi.analyzeSaved(token)
       setResult(data)
       const ex = data?.extracted || {}
       if (ex.bio) setBio(ex.bio)
@@ -80,11 +63,16 @@ export default function AIAssistProfilePage() {
       if (ex.linkedin) setLinkedin(ex.linkedin)
       if (ex.education) setEducation(ex.education)
       if (ex.certifications) setCertifications(ex.certifications)
+      if (Array.isArray(ex.skills)) setSkills(ex.skills.filter(Boolean))
       if (Array.isArray(ex.experiences)) setExperiences(ex.experiences)
       if (Array.isArray(ex.education_items)) setEducationItems(ex.education_items)
-      toast({ title: "Resume analyzed" })
+      toast(
+        data?.meta?.ai_used === false
+          ? { title: "Read the basics from your CV", description: "AI wasn't available, so check each field." }
+          : { title: "CV analyzed", description: "Review the fields below, then apply them to your profile." },
+      )
     } catch (e: any) {
-      toast({ title: "Upload failed", description: e?.message || "Try again", variant: "destructive" })
+      toast({ title: "Could not analyze your CV", description: e?.message || "Try again", variant: "destructive" })
     } finally {
       setLoading(false)
     }
@@ -110,6 +98,7 @@ export default function AIAssistProfilePage() {
       if (linkedin) payload.linkedin = linkedin
       if (education) payload.education = education
       if (certifications) payload.certifications = certifications
+      if (skills.length > 0) payload.skills = skills
 
       const res = await fetch(`${API_BASE_URL}/api/v1/proz/ai/apply-suggestions`, {
         method: "POST",
@@ -200,7 +189,7 @@ export default function AIAssistProfilePage() {
           <div>
             <h1 className={dashboardPageTitleClass}>AI Profile Assistant</h1>
             <p className={`mt-1 ${dashboardPageSubtitleClass}`}>
-              Import your background or review your profile — AI will help highlight your proven skills and experience.
+              Add your CV and AI fills in your profile for you to check. Or ask AI to review what you have.
             </p>
           </div>
         </div>
@@ -208,42 +197,47 @@ export default function AIAssistProfilePage() {
 
       <Card className={dashboardCardClass}>
         <CardHeader className="border-b border-slate-100 pb-4">
-          <CardTitle className="text-[16px] font-semibold text-slate-900">Upload & analyze</CardTitle>
+          <CardTitle className="text-[16px] font-semibold text-slate-900">From your CV</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6 pt-6">
-          <div className="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-6">
-            <Label className="text-slate-700">PDF Resume</Label>
-            <Input
+          <ResumeCard showAiLink={false} className="shadow-none" />
+          <div className="flex flex-wrap gap-2">
+            <Button
+              onClick={analyzeCv}
+              disabled={loading || !profile?.resume_filename}
+              className="bg-brand hover:bg-brand-dark"
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              {loading ? "Analyzing..." : "Fill my profile from my CV"}
+            </Button>
+            <Button
+              onClick={reviewCurrentProfile}
               disabled={loading}
-              type="file"
-              accept="application/pdf"
-              className={`mt-2 ${dashboardInputClass}`}
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-            />
-            {file && (
-              <p className="mt-2 text-[13px] text-slate-500">
-                Selected: <span className="font-medium text-slate-700">{file.name}</span>
-              </p>
-            )}
-            <div className="mt-4 flex flex-wrap gap-2">
-              <Button
-                onClick={handleUpload}
-                disabled={loading || !file}
-                className="bg-brand hover:bg-brand-dark"
-              >
-                <Upload className="mr-2 h-4 w-4" />
-                {loading ? "Analyzing..." : "Analyze Resume"}
-              </Button>
-              <Button
-                onClick={reviewCurrentProfile}
-                disabled={loading}
-                variant="outline"
-                className="border-slate-200 text-slate-700 hover:bg-slate-50"
-              >
-                Review Current Profile
-              </Button>
-            </div>
+              variant="outline"
+              className="border-slate-200 text-slate-700 hover:bg-slate-50"
+            >
+              Review current profile
+            </Button>
           </div>
+
+          {result?.meta?.ai_used === false && (
+            <div role="status" className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-[13px] text-amber-900">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <p>
+                <span className="font-semibold">AI wasn&apos;t used this time.</span> {describeAiError(result.meta.ai_error)} We
+                read the basics from your CV, so check every field before applying.
+              </p>
+            </div>
+          )}
+          {result?.review?.ai_used === false && (
+            <div role="status" className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-[13px] text-amber-900">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              <p>
+                <span className="font-semibold">AI review isn&apos;t available right now.</span>{" "}
+                {describeAiError(result.review.ai_error)} The tips below are basic checks only.
+              </p>
+            </div>
+          )}
 
           {result && (
             <div className="space-y-6">
@@ -337,6 +331,27 @@ export default function AIAssistProfilePage() {
                   <Input className={dashboardInputClass} value={linkedin} onChange={(e) => setLinkedin(e.target.value)} />
                 </div>
               </div>
+
+              {skills.length > 0 && (
+                <div>
+                  <Label>Skills from your CV</Label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {skills.map((skill) => (
+                      <span key={skill} className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-3 py-1 text-[12.5px] font-medium text-indigo-700">
+                        {skill}
+                        <button
+                          type="button"
+                          onClick={() => setSkills((prev) => prev.filter((s) => s !== skill))}
+                          className="rounded-full p-0.5 hover:bg-indigo-100"
+                          aria-label={`Remove ${skill}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div>
                 <Label>Suggested Bio / Summary</Label>

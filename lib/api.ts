@@ -938,6 +938,8 @@ export const prozApi = {
     suggestions?: string[]
     suggested_updates?: Record<string, unknown>
     rephrased_bio?: string[]
+    ai_used?: boolean
+    ai_error?: string | null
   }> => {
     const response = await fetch(`${API_BASE_URL}/api/v1/proz/ai/review-draft`, {
       method: "POST",
@@ -2121,5 +2123,191 @@ export const prozProfilesApi = {
       console.error("Network error while searching public profiles:", error)
       throw new Error("Network error: Could not connect to the API.")
     }
+  },
+}
+
+
+// ---- CV / resume (stored privately on the profile) ----
+
+export const RESUME_MAX_BYTES = 10 * 1024 * 1024 // must match backend MAX_RESUME_BYTES
+export const RESUME_ACCEPT = ".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+export type ResumeInfo = { resume_filename: string | null; resume_uploaded_at: string | null }
+
+/** What the AI (or the basic fallback reader) found in a CV. */
+export type ResumeAnalysis = {
+  success?: boolean
+  extracted: {
+    first_name?: string
+    last_name?: string
+    email?: string
+    phone_number?: string
+    location?: string
+    years_experience?: number | null
+    skills?: string[]
+    bio?: string
+    education?: string
+    certifications?: string
+    website?: string
+    linkedin?: string
+    experiences?: { role?: string; company?: string; period?: string; description?: string }[]
+    education_items?: { institution?: string; degree?: string; period?: string; raw?: string }[]
+  }
+  suggestions: string[]
+  rephrased_summaries: string[]
+  meta?: { ai_used?: boolean; ai_error?: string | null; extraction_method?: string | null; text_chars?: number }
+}
+
+/** Plain-language reason the AI didn't run, for the notice shown under results. */
+export function describeAiError(code?: string | null): string {
+  switch (code) {
+    case "quota":
+      return "The AI service has run out of credit."
+    case "auth":
+      return "The AI service key isn't valid."
+    case "rate_limit":
+      return "The AI service is busy right now."
+    case "not_configured":
+      return "AI isn't set up on the server yet."
+    default:
+      return "The AI service didn't respond."
+  }
+}
+
+export function validateResumeFile(file: File): string | null {
+  const ext = file.name.toLowerCase().split(".").pop() || ""
+  if (!["pdf", "doc", "docx"].includes(ext)) return "Upload your CV as a PDF or Word file (.pdf, .docx or .doc)."
+  if (file.size === 0) return "That file is empty."
+  if (file.size > RESUME_MAX_BYTES) return "Your CV is larger than 10 MB. Export a smaller PDF and try again."
+  return null
+}
+
+export const resumeApi = {
+  upload: async (token: string, file: File): Promise<ResumeInfo> => {
+    const problem = validateResumeFile(file)
+    if (problem) throw new Error(problem)
+    const form = new FormData()
+    form.append("file", file)
+    let response: Response
+    try {
+      response = await fetch(`${API_BASE_URL}/api/v1/proz/media/upload-resume`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+      })
+    } catch {
+      throw new Error("Network error: could not upload your CV. Check your connection and try again.")
+    }
+    if (response.status === 413) throw new Error("Your CV is too large for the server. Keep it under 10 MB.")
+    return handleResponse<ResumeInfo>(response)
+  },
+
+  /** Downloads the signed-in professional's CV and asks the browser to save it. */
+  download: async (token: string, fallbackName = "cv"): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/proz/media/resume`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!response.ok) await handleResponse(response)
+    saveBlob(await response.blob(), fileNameFrom(response, fallbackName))
+  },
+
+  /** Admin only: download a professional's CV. */
+  downloadForProfile: async (token: string, profileId: string, fallbackName = "cv"): Promise<void> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/proz/media/admin/resume/${encodeURIComponent(profileId)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!response.ok) await handleResponse(response)
+    saveBlob(await response.blob(), fileNameFrom(response, fallbackName))
+  },
+
+  remove: async (token: string): Promise<ResumeInfo> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/proz/media/resume`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    return handleResponse<ResumeInfo>(response)
+  },
+
+  /** Reads the saved CV (with AI when available) and returns suggested profile fields. */
+  analyzeSaved: async (token: string): Promise<ResumeAnalysis> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/proz/ai/parse-saved-resume`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    return handleResponse<ResumeAnalysis>(response)
+  },
+}
+
+function fileNameFrom(response: Response, fallback: string): string {
+  const header = response.headers.get("content-disposition") || ""
+  const star = /filename\*=utf-8''([^;]+)/i.exec(header)
+  if (star) {
+    try {
+      return decodeURIComponent(star[1])
+    } catch {
+      /* fall through */
+    }
+  }
+  const plain = /filename="?([^";]+)"?/i.exec(header)
+  return plain ? plain[1] : fallback
+}
+
+function saveBlob(blob: Blob, name: string): void {
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement("a")
+  link.href = url
+  link.download = name
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 10_000)
+}
+
+// ---- "Finish your profile" reminder emails (admin) ----
+
+export type ProfileReminderRecipient = {
+  name: string
+  email: string
+  steps_done: number
+  steps_total: number
+  missing: string[]
+  last_reminded_at?: string | null
+}
+
+export type ProfileReminderOverview = {
+  subject: string
+  eligible_count: number
+  recently_reminded_count: number
+  skip_recent_days: number
+  recipients: ProfileReminderRecipient[]
+  preview_html: string
+}
+
+export type ProfileReminderResult = { success: boolean; message: string; count: number }
+
+export const profileReminderApi = {
+  overview: async (token: string): Promise<ProfileReminderOverview> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/email/profile-reminders`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    return handleResponse<ProfileReminderOverview>(response)
+  },
+
+  sendTest: async (token: string, email?: string): Promise<ProfileReminderResult> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/email/profile-reminders/test`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(email ? { email } : {}),
+    })
+    return handleResponse<ProfileReminderResult>(response)
+  },
+
+  sendAll: async (token: string): Promise<ProfileReminderResult> => {
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/email/profile-reminders/send`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ confirm: true }),
+    })
+    return handleResponse<ProfileReminderResult>(response)
   },
 }

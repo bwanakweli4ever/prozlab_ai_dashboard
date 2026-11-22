@@ -2,9 +2,10 @@
 
 import type React from "react"
 import { createContext, useState, useEffect, useContext, useCallback, useMemo } from "react"
-import { prozApi } from "@/lib/api"
+import { prozApi, resumeApi } from "@/lib/api"
 import { normalizeMediaUrl } from "@/lib/utils"
 import { clearPendingOnboarding, peekPendingOnboarding } from "@/lib/pending-onboarding"
+import { clearPendingCv, peekPendingCv } from "@/lib/pending-cv"
 import { useAuth } from "./auth-context"
 import type { ProzProfileCreate, ProzProfileResponse, ProzProfileUpdate } from "@/types/api"
 
@@ -58,7 +59,7 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       let profileData = await prozApi.getOwnProfile(token)
 
-      // First sign-in after verifying email: create the profile from the saved sign-up answers.
+      // First sign-in after sign-up: create the profile from the saved sign-up answers.
       const pending = !profileData && user?.email ? peekPendingOnboarding(user.email) : null
       if (pending) {
         try {
@@ -66,6 +67,20 @@ export const ProfileProvider: React.FC<{ children: React.ReactNode }> = ({ child
           clearPendingOnboarding()
         } catch (createError) {
           console.warn("Could not create the profile from saved sign-up answers:", createError)
+        }
+      }
+
+      // A CV picked during sign-up is uploaded once the profile exists.
+      if (profileData && !profileData.resume_filename && user?.email) {
+        const pendingCv = await peekPendingCv(user.email)
+        if (pendingCv) {
+          try {
+            const saved = await resumeApi.upload(token, pendingCv)
+            profileData = { ...profileData, ...saved }
+            await clearPendingCv()
+          } catch (uploadError) {
+            console.warn("Could not upload the CV saved during sign-up:", uploadError)
+          }
         }
       }
 

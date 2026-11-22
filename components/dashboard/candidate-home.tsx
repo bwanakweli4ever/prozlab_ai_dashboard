@@ -154,8 +154,8 @@ export function CandidateHome() {
       href: "/dashboard/profile/view?edit=1",
     },
     {
-      title: "AI Profile Assist",
-      desc: "Import & enrich your profile",
+      title: profile?.resume_filename ? "AI Profile Assist" : "Upload your CV",
+      desc: profile?.resume_filename ? "Fill your profile from your CV" : "AI fills in your profile from it",
       icon: Sparkles,
       href: "/dashboard/profile/ai-assist",
     },

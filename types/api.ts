@@ -63,6 +63,9 @@ export interface ProzProfileResponse {
   email: string
   phone_number?: string
   profile_image_url?: string
+  /** Original file name of the CV saved on this profile (the file itself is private). */
+  resume_filename?: string | null
+  resume_uploaded_at?: string | null
   bio?: string
   location?: string
   years_experience?: number
@@ -129,6 +132,11 @@ export interface ProzProfileCreate {
   website?: string
   linkedin?: string
   preferred_contact_method: string
+  skills?: string[]
+  work_types?: string[]
+  experience_level?: string
+  portfolio_links?: string[]
+  onboarding_completed?: boolean
 }
 
 export interface ProzProfileUpdate {

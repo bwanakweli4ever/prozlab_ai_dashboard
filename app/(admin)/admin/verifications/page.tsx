@@ -25,6 +25,7 @@ function normalizeProfile(p: Record<string, unknown>): TalentProfile {
     created_at: String(p.created_at ?? new Date().toISOString()),
     updated_at: p.updated_at as string | undefined,
     profile_image_url: p.profile_image_url as string | undefined,
+    resume_filename: (p.resume_filename as string | null | undefined) ?? undefined,
     education: p.education as string | undefined,
     certifications: p.certifications as string | undefined,
     website: p.website as string | undefined,
