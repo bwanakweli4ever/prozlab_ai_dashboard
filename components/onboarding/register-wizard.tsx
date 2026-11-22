@@ -207,7 +207,7 @@ export function RegisterWizard() {
       bio: onboardingData.bio || "Professional looking to provide quality services",
       location: "Remote",
       years_experience: experienceMapping[onboardingData.experience] || 1,
-      hourly_rate: 50,
+      hourly_rate: 0, // set by the professional later; never assume a rate
       availability: onboardingData.availability || "full-time",
       education: "",
       certifications: "",

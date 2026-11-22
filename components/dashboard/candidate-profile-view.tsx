@@ -50,7 +50,6 @@ const SKILL_STYLES: Record<string, { bg: string; dot: string }> = {
   PostgreSQL: { bg: "bg-violet-50 border-violet-200 text-violet-800", dot: "bg-violet-500" },
 }
 
-const PROJECT_METRICS = ["30% Engagement", "50K+ Users", "99.9% Uptime", "2M+ API calls"]
 
 const KNOWN_SKILLS = [
   "React", "Node.js", "TypeScript", "JavaScript", "FastAPI", "Python", "AWS", "Docker",
@@ -178,19 +177,13 @@ function ChecklistRow({
 }
 
 function deriveHeadline(profile: ExtendedProfile, skills: string[]): string {
+  // Built only from what the person entered: their top skills and years of experience.
+  const parts: string[] = []
+  if (skills.length > 0) parts.push(skills.slice(0, 3).join(" · "))
+  else if (profile.experience_level) parts.push(profile.experience_level)
   const yrs = profile.years_experience ?? 0
-  const seniority = yrs >= 7 ? "Senior" : yrs >= 4 ? "Mid-Level" : yrs >= 2 ? "" : "Junior"
-  const role = yrs >= 5 ? "Full-Stack Engineer" : yrs >= 2 ? "Software Engineer" : "Professional"
-
-  let focus = profile.experience_level || "SaaS & AI Systems"
-  if (skills.length >= 2) {
-    focus = `${skills[0]} & ${skills[1]}`
-  } else if (skills.length === 1) {
-    focus = skills[0]
-  }
-  if (focus.length > 48) focus = "SaaS & AI Systems"
-
-  return [seniority, role].filter(Boolean).join(" ") + ` | ${focus}`
+  if (yrs > 0) parts.push(`${yrs}+ years`)
+  return parts.join(" | ") || "Add your skills to complete your headline"
 }
 
 type ProjectCard = {
@@ -226,11 +219,9 @@ function deriveProjects(profile: ExtendedProfile, skills: string[]): ProjectCard
     return {
       name,
       url,
-      description:
-        profile.bio?.slice(0, 90) ||
-        "End-to-end product delivery with measurable impact on users and business outcomes.",
-      tags: skills.slice(i * 2, i * 2 + 2).length ? skills.slice(i * 2, i * 2 + 2) : ["React", "FastAPI"],
-      metric: PROJECT_METRICS[i % PROJECT_METRICS.length],
+      description: url.replace(/^https?:\/\//, "").replace(/\/$/, ""),
+      tags: skills.slice(i * 2, i * 2 + 2),
+      metric: "",
       initial: name.charAt(0),
       color: colors[i % colors.length],
     }
@@ -316,20 +307,15 @@ export function CandidateProfileView({ profile, onEdit, readOnly = false }: Cand
 
   const isVerified = profile.verification_status === "verified"
   const skillVerified = profile.skill_verification_status === "verified"
-  const skillPending = profile.skill_verification_status === "in_progress"
+  const skillPending = ["in_progress", "pending_review"].includes(profile.skill_verification_status || "")
 
   const hasBasic = !!(profile.first_name && profile.last_name && profile.email)
   const hasExperience = (profile.years_experience ?? 0) > 0 || (profile.bio?.length ?? 0) > 50
   const hasSkills = skills.length > 0
   const hasPortfolio = projects.length > 0
 
-  const successRate = profile.predicted_success_score
-    ? Math.round(profile.predicted_success_score)
-    : Math.min(98, 72 + Math.floor(percentage / 4))
-
-  const projectCount = Math.max(projects.length, profile.review_count || 0, 1)
-  const displayRate = profile.hourly_rate && profile.hourly_rate > 0 ? profile.hourly_rate : 40
-  const visibilityBoost = Math.max(8, 100 - percentage)
+  const hourlyRate = profile.hourly_rate && profile.hourly_rate > 0 ? profile.hourly_rate : null
+  const stepsLeft = computeProfileCompletion(profile).missingFields.length
   const availabilityStatus = getAvailabilityStatus(profile.availability)
 
   const bioText =
@@ -338,9 +324,18 @@ export function CandidateProfileView({ profile, onEdit, readOnly = false }: Cand
   const bioPreview = bioText.length > 220 && !bioExpanded ? bioText.slice(0, 220) + "…" : bioText
 
   const stats = [
-    { icon: Briefcase, label: `${profile.years_experience ?? 0}+ Years Experience` },
-    { icon: FolderOpen, label: `${projectCount} Projects Completed` },
-    { icon: Rocket, label: `${successRate}% Success Rate` },
+    {
+      icon: Briefcase,
+      label: (profile.years_experience ?? 0) > 0 ? `${profile.years_experience}+ Years Experience` : "Add your experience",
+    },
+    {
+      icon: FolderOpen,
+      label: projects.length > 0 ? `${projects.length} Portfolio link${projects.length === 1 ? "" : "s"}` : "No portfolio links yet",
+    },
+    {
+      icon: Rocket,
+      label: skillVerified ? "Work verified" : skillPending ? "Verification in progress" : "Work not verified yet",
+    },
     {
       icon: Star,
       label:
@@ -388,10 +383,14 @@ export function CandidateProfileView({ profile, onEdit, readOnly = false }: Cand
             <WaveBanner />
             <div className="relative flex items-start justify-end gap-4">
               <div className="text-right text-white">
-                <p className="text-[26px] font-bold leading-none">
-                  ${displayRate}
-                  <span className="text-[14px] font-normal opacity-75"> /hr</span>
-                </p>
+                {hourlyRate ? (
+                  <p className="text-[26px] font-bold leading-none">
+                    ${hourlyRate}
+                    <span className="text-[14px] font-normal opacity-75"> /hr</span>
+                  </p>
+                ) : (
+                  <p className="text-[14px] font-semibold leading-none opacity-90">Rate not set</p>
+                )}
                 <p className="mt-1.5 flex items-center justify-end gap-1.5 text-[12px] font-medium">
                   <span
                     className={cn(
@@ -459,19 +458,21 @@ export function CandidateProfileView({ profile, onEdit, readOnly = false }: Cand
                     )}
                   >
                     <BadgeCheck className="h-3.5 w-3.5" />
-                    Verified Professional
+                    {isVerified ? "Verified Professional" : "Profile not verified yet"}
                   </span>
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-semibold",
-                      skillVerified
-                        ? "border-violet-200 bg-violet-50 text-violet-700"
-                        : "border-indigo-100 bg-indigo-50 text-indigo-600"
-                    )}
-                  >
-                    <Star className="h-3.5 w-3.5 fill-current" />
-                    Top 5% Work Verification Score
-                  </span>
+                  {(skillVerified || skillPending) && (
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-semibold",
+                        skillVerified
+                          ? "border-violet-200 bg-violet-50 text-violet-700"
+                          : "border-indigo-100 bg-indigo-50 text-indigo-600"
+                      )}
+                    >
+                      <Star className="h-3.5 w-3.5 fill-current" />
+                      {skillVerified ? "Work verified" : "Work verification in progress"}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -665,7 +666,7 @@ export function CandidateProfileView({ profile, onEdit, readOnly = false }: Cand
                     ))}
                   </div>
                   <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
-                    <span className="text-[11px] font-semibold text-emerald-600">{project.metric}</span>
+                    <span className="text-[11px] text-slate-400">Portfolio link</span>
                     <a
                       href={project.url}
                       target="_blank"
@@ -785,7 +786,7 @@ export function CandidateProfileView({ profile, onEdit, readOnly = false }: Cand
             {readOnly ? (
               <>Profile is <span className="font-semibold text-slate-700">{percentage}% complete</span></>
             ) : (
-              <>A stronger profile gets you <span className="font-semibold text-slate-700">3× more matches</span></>
+              <>Profile is <span className="font-semibold text-slate-700">{percentage}% complete</span></>
             )}
           </p>
           {!readOnly && (
@@ -798,7 +799,11 @@ export function CandidateProfileView({ profile, onEdit, readOnly = false }: Cand
             Complete Profile
           </Button>
           )}
-          <p className="mt-2 text-center text-[11px] font-semibold text-emerald-600">+{visibilityBoost}% visibility</p>
+          {stepsLeft > 0 && (
+            <p className="mt-2 text-center text-[11px] font-semibold text-slate-500">
+              {stepsLeft} step{stepsLeft === 1 ? "" : "s"} left
+            </p>
+          )}
           <ul className="mt-4 space-y-2.5 border-t border-slate-100 pt-4">
             <ChecklistRow done={hasBasic} label="Basic Information" />
             <ChecklistRow done={hasExperience} label="Work Experience" />

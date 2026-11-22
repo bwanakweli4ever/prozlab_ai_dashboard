@@ -14,7 +14,6 @@ import {
   Bell,
   CheckSquare,
   Briefcase,
-  MessageSquare,
   FileText,
   Sparkles,
   Wand2,
@@ -102,8 +101,6 @@ export const DashboardSidebar = React.forwardRef<
         { title: "AI Assist", href: "/dashboard/profile/ai-assist", icon: Wand2, badge: "New" },
         { title: "Verification", href: "/dashboard/verification", icon: ShieldCheck },
         { title: "Tasks", href: "/dashboard/tasks", icon: CheckSquare },
-        { title: "Opportunities", href: "/dashboard/tasks", icon: FileText },
-        { title: "Messages", href: "/dashboard/notifications", icon: MessageSquare },
         { title: "Notifications", href: "/dashboard/notifications", icon: Bell },
         { title: "Settings", href: "/dashboard/settings", icon: Settings },
       ]
@@ -139,13 +136,17 @@ export const DashboardSidebar = React.forwardRef<
           <div className="flex items-start gap-2">
             <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
             <div>
-              <p className="text-[12px] font-semibold text-slate-900">Boost your visibility</p>
+              <p className="text-[12px] font-semibold text-slate-900">Finish your profile with AI</p>
               <p className="mt-0.5 text-[11px] leading-snug text-slate-500">
-                Stand out to top employers with a boosted profile.
+                Upload your CV and AI fills in most of it. Takes a few minutes.
               </p>
-              <button type="button" className="mt-2 text-[11px] font-semibold text-brand hover:text-brand-dark">
-                Upgrade Now
-              </button>
+              <Link
+                href="/dashboard/profile/ai-assist"
+                onClick={onNavClick}
+                className="mt-2 inline-block text-[11px] font-semibold text-brand hover:text-brand-dark"
+              >
+                Open AI Assist →
+              </Link>
             </div>
           </div>
         </div>
