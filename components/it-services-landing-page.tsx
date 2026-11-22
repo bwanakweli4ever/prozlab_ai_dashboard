@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { ArrowRight, ArrowUpRight, Check, Menu } from "lucide-react"
 
@@ -80,19 +81,45 @@ export function ItServicesLandingPage() {
 
       <main>
         {/* ── Hero ── */}
-        <section className="border-b border-slate-100">
-          <div className="mx-auto grid max-w-[1200px] items-center gap-12 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16 lg:px-8 lg:py-24">
+        <section className="relative isolate overflow-hidden border-b border-slate-100">
+          {/* Soft light and a faint dot grid, kept behind the content */}
+          <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+            <div className="absolute -right-40 -top-40 h-[560px] w-[560px] rounded-full bg-[radial-gradient(closest-side,rgba(99,102,241,0.18),transparent)]" />
+            <div className="absolute -left-48 bottom-[-220px] h-[480px] w-[480px] rounded-full bg-[radial-gradient(closest-side,rgba(241,90,41,0.10),transparent)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(#CBD5E1_1px,transparent_1px)] opacity-60 [background-size:22px_22px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_35%,#000_25%,transparent_75%)]" />
+          </div>
+
+          <div className="mx-auto grid max-w-[1200px] items-center gap-14 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16 lg:px-8 lg:py-24">
             <div className="min-w-0">
-              <h1 className="text-[2.6rem] font-extrabold leading-[1.04] tracking-tight sm:text-[3.4rem] lg:text-[3.75rem]">
+              <p className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[13px] font-medium text-slate-600 shadow-sm backdrop-blur">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+                IT · Websites · Software for US businesses
+              </p>
+              <h1 className="mt-5 text-[2.6rem] font-extrabold leading-[1.04] tracking-tight text-slate-900 sm:text-[3.4rem] lg:text-[3.9rem]">
                 Your IT department,
-                <span className="block text-brand">minus the hiring.</span>
+                <span className="relative block w-fit">
+                  <span className="bg-gradient-to-r from-brand via-indigo-500 to-violet-500 bg-clip-text text-transparent">
+                    minus the hiring.
+                  </span>
+                  <svg
+                    aria-hidden
+                    viewBox="0 0 300 14"
+                    preserveAspectRatio="none"
+                    className="absolute -bottom-2 left-0 h-3 w-full text-prozlab-red/70"
+                  >
+                    <path d="M2 10 C 70 3, 160 2, 298 7" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+                  </svg>
+                </span>
               </h1>
-              <p className="mt-5 max-w-lg text-[18px] leading-relaxed text-slate-600">
+              <p className="mt-7 max-w-lg text-[18px] leading-relaxed text-slate-600">
                 IT support, networks, security, websites and custom software for businesses across the US. One team
                 for all of it, with experts on site when needed.
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Button asChild className="h-12 rounded-lg bg-brand px-6 text-[15px] font-semibold hover:bg-brand-dark">
+                <Button
+                  asChild
+                  className="h-12 rounded-xl bg-brand px-6 text-[15px] font-semibold text-white shadow-lg shadow-indigo-500/25 transition-transform hover:-translate-y-0.5 hover:bg-brand-dark"
+                >
                   <Link href="/request-service">
                     Request IT support <ArrowRight className="ml-1.5 h-4 w-4" aria-hidden />
                   </Link>
@@ -100,15 +127,49 @@ export function ItServicesLandingPage() {
                 <Button
                   asChild
                   variant="outline"
-                  className="h-12 rounded-lg border-slate-300 bg-white px-6 text-[15px] font-semibold text-slate-800 hover:bg-slate-50"
+                  className="h-12 rounded-xl border-slate-300 bg-white px-6 text-[15px] font-semibold text-slate-800 hover:bg-slate-50"
                 >
                   <a href={BOOK_DEMO_URL} target="_blank" rel="noopener noreferrer">
                     Book a 30-min call
                   </a>
                 </Button>
               </div>
+              <p className="mt-8 flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] text-slate-500">
+                <span>Recent work for</span>
+                {CASE_STUDIES.map((study, i) => (
+                  <span key={study.client} className="inline-flex items-center gap-3">
+                    {i > 0 && <span className="h-1 w-1 rounded-full bg-slate-300" aria-hidden />}
+                    <a href="#work" className="font-semibold text-slate-800 underline-offset-4 hover:text-brand hover:underline">
+                      {study.client}
+                    </a>
+                  </span>
+                ))}
+              </p>
             </div>
-            <ServiceDeskPreview />
+
+            <div className="relative min-w-0">
+              <div
+                aria-hidden
+                className="absolute -inset-6 -z-10 rounded-[2rem] bg-gradient-to-br from-indigo-200/60 via-white/0 to-orange-100/60 blur-2xl"
+              />
+              <ServiceDeskPreview />
+              {/* The on-site visit from the demo queue (ticket PZ-1044), shown as the field expert's card */}
+              <div className="absolute -bottom-7 -left-6 hidden w-[290px] items-center gap-3 rounded-2xl border border-slate-200 bg-white/95 p-2.5 pr-4 shadow-[0_16px_40px_-16px_rgba(15,23,42,0.35)] backdrop-blur lg:flex">
+                <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-xl">
+                  <Image
+                    src="/images/hero/prozlab-van-night.jpg"
+                    alt=""
+                    fill
+                    sizes="80px"
+                    className="object-cover"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[13px] font-semibold text-slate-900">Field expert booked</p>
+                  <p className="truncate text-[12px] text-slate-500">Real estate office · Tampa, FL</p>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
