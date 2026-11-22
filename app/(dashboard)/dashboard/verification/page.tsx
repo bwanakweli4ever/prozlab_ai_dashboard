@@ -40,6 +40,7 @@ import {
   dashboardPageTitleClass,
 } from "@/lib/dashboard-styles"
 import { cn, normalizeMediaUrl } from "@/lib/utils"
+import { ResumeCard } from "@/components/dashboard/resume-card"
 
 const EVIDENCE_TYPES: {
   id: VerificationEvidenceType
@@ -48,14 +49,13 @@ const EVIDENCE_TYPES: {
   hint: string
   section: "identity" | "work" | "skills"
 }[] = [
-  { id: "github", label: "GitHub", icon: Github, hint: "Public repos prove real engineering work", section: "identity" },
-  { id: "linkedin", label: "LinkedIn", icon: Linkedin, hint: "Professional history cross-check", section: "identity" },
-  { id: "identity_document", label: "ID Document", icon: ShieldCheck, hint: "Upload a government ID or passport (PDF, JPG, or PNG). Only admins can view it during review.", section: "identity" },
-  { id: "previous_employer", label: "Past Employer", icon: Briefcase, hint: "Company + role you can verify", section: "work" },
-  { id: "work_sample", label: "Work Sample", icon: Briefcase, hint: "Case study, demo, or live project URL", section: "work" },
-  { id: "portfolio", label: "Portfolio", icon: Globe, hint: "Personal site or Behance/Dribbble", section: "skills" },
-  { id: "recommendation", label: "Recommendation", icon: UserCheck, hint: "Reference from manager or client", section: "skills" },
-  { id: "certification", label: "Certification", icon: BadgeCheck, hint: "Credly, Coursera, or vendor cert link", section: "skills" },
+  { id: "github", label: "GitHub", icon: Github, hint: "Your GitHub profile or one of your repositories.", section: "identity" },
+  { id: "linkedin", label: "LinkedIn", icon: Linkedin, hint: "Your public LinkedIn profile.", section: "identity" },
+  { id: "identity_document", label: "ID Document", icon: ShieldCheck, hint: "A government ID or passport (PDF, JPG or PNG). Only Prozlab admins can see it.", section: "identity" },
+  { id: "portfolio", label: "Portfolio", icon: Globe, hint: "Your website or portfolio link.", section: "skills" },
+  { id: "work_sample", label: "Work Sample", icon: Briefcase, hint: "A case study, demo or live project link.", section: "skills" },
+  { id: "certification", label: "Certification", icon: BadgeCheck, hint: "A link to a certificate (Credly, Microsoft, Cisco, AWS…).", section: "skills" },
+  { id: "recommendation", label: "Reference", icon: UserCheck, hint: "Someone who can vouch for your work: a manager or client.", section: "skills" },
 ]
 
 function RequirementRow({ met, label }: { met: boolean; label: string }) {
@@ -457,7 +457,7 @@ export default function SkillsVerificationPage() {
           <div>
             <h1 className={dashboardPageTitleClass}>Verification Center</h1>
             <p className={`mt-1 ${dashboardPageSubtitleClass}`}>
-              Verify your identity, work experience, and skills for admin review.
+              Two steps: show it&apos;s you, and add your CV. Everything else is optional.
             </p>
           </div>
         </div>
@@ -499,10 +499,11 @@ export default function SkillsVerificationPage() {
             <CardTitle className="text-[14px] font-semibold">Requirements</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-2 sm:grid-cols-2">
-            <RequirementRow met={!!reqs?.identity_link} label="Identity (GitHub, LinkedIn, or ID)" />
-            <RequirementRow met={!!reqs?.work_experience || !!reqs?.work_proof} label="Work experience proof" />
-            <RequirementRow met={!!reqs?.third_party} label="Recommendation or certification" />
-            <RequirementRow met={!!reqs?.minimum_items} label="At least 2 evidence items" />
+            <RequirementRow met={!!reqs?.identity_link} label="1. Show it's you: GitHub, LinkedIn or ID" />
+            <RequirementRow met={!!reqs?.cv_on_profile} label="2. Your CV (it covers your experience)" />
+            <p className="text-[12px] text-slate-500 sm:col-span-2">
+              Portfolio, work samples, certifications and references are optional and raise your score.
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -518,6 +519,7 @@ export default function SkillsVerificationPage() {
               const next = v as "identity" | "work" | "skills"
               setSection(next)
               const first = EVIDENCE_TYPES.find((t) => t.section === next)
+              if (next === "work") return
               if (first) {
                 setActiveType(first.id)
                 resetForm()
@@ -525,12 +527,22 @@ export default function SkillsVerificationPage() {
             }}
           >
             <TabsList className="mb-3 grid w-full grid-cols-3 bg-slate-100 p-1">
-              <TabsTrigger value="identity" className="text-[12px]">Identity</TabsTrigger>
-              <TabsTrigger value="work" className="text-[12px]">Work Experience</TabsTrigger>
-              <TabsTrigger value="skills" className="text-[12px]">Work Verification</TabsTrigger>
+              <TabsTrigger value="identity" className="text-[12px]">1. It&apos;s you</TabsTrigger>
+              <TabsTrigger value="work" className="text-[12px]">2. Your CV</TabsTrigger>
+              <TabsTrigger value="skills" className="text-[12px]">Extras (optional)</TabsTrigger>
             </TabsList>
           </Tabs>
 
+          {section === "work" ? (
+            <div className="space-y-3">
+              <p className="text-[13px] text-slate-600">
+                Your CV is your work-experience proof, so there&apos;s nothing to retype. Our team reviews it with the rest
+                of your verification.
+              </p>
+              <ResumeCard className="shadow-none" onUploaded={loadStatus} />
+            </div>
+          ) : (
+          <>
           <Tabs value={activeType} onValueChange={(v) => { setActiveType(v as VerificationEvidenceType); resetForm() }}>
             <TabsList className="flex h-auto flex-wrap gap-1 bg-slate-100 p-1">
               {EVIDENCE_TYPES.filter((t) => t.section === section).map((t) => (
@@ -679,6 +691,8 @@ export default function SkillsVerificationPage() {
             {submitting || githubChecking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
             {githubChecking ? "Checking GitHub…" : "Add evidence"}
           </Button>
+          </>
+          )}
         </CardContent>
       </Card>
 

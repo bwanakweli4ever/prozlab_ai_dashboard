@@ -37,6 +37,7 @@ import {
 } from "@/lib/dashboard-styles"
 import type { ProzProfileResponse, ProzProfileUpdate } from "@/types/api"
 import { cn, getProfileImageUrl } from "@/lib/utils"
+import { PhotoCropDialog } from "@/components/dashboard/photo-crop-dialog"
 
 type SectionId = "personal" | "summary" | "experience" | "education" | "contact"
 
@@ -169,6 +170,7 @@ export function EditProfileSections({
   const [aiResult, setAiResult] = useState<AiResult | null>(null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [photoToCrop, setPhotoToCrop] = useState<File | null>(null)
 
   useEffect(() => {
     setActiveSection(initialSection)
@@ -213,23 +215,31 @@ export function EditProfileSections({
   const currentIndex = SECTIONS.findIndex((s) => s.id === activeSection)
   const currentSection = SECTIONS[currentIndex]
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Picking a photo opens the crop editor; only the cropped 800x800 JPEG is uploaded.
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (!file || !token) return
+    event.target.value = ""
+    if (!file) return
+    if (file.size > 25 * 1024 * 1024) {
+      toast({ title: "That photo is too large", description: "Choose a photo under 25 MB.", variant: "destructive" })
+      return
+    }
+    setPhotoToCrop(file)
+  }
+
+  const savePhoto = async (photo: File) => {
+    if (!token) throw new Error("Your session has expired. Sign in again.")
     setIsUploadingImage(true)
+    const previewUrl = URL.createObjectURL(photo)
     try {
-      const previewUrl = URL.createObjectURL(file)
+      await mediaApi.uploadProfileImage(photo, token)
       setImagePreview(previewUrl)
-      const result = await mediaApi.uploadProfileImage(file, token)
-      if (result?.url) {
-        await updateProfile({ profile_image_url: result.url })
-      }
       await fetchProfile()
-      toast({ title: "Photo updated" })
-      setImagePreview(null)
-    } catch {
-      toast({ title: "Upload failed", variant: "destructive" })
-      setImagePreview(null)
+      setPhotoToCrop(null)
+      toast({ title: "Photo updated", description: "Looking good." })
+    } catch (error) {
+      URL.revokeObjectURL(previewUrl)
+      throw error instanceof Error ? error : new Error("Upload failed. Try again.")
     } finally {
       setIsUploadingImage(false)
     }
@@ -439,7 +449,7 @@ export function EditProfileSections({
                       <div>
                         <input
                           type="file"
-                          accept="image/*"
+                          accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/*"
                           id="profile-photo"
                           className="hidden"
                           onChange={handleImageUpload}
@@ -452,8 +462,10 @@ export function EditProfileSections({
                           onClick={() => document.getElementById("profile-photo")?.click()}
                         >
                           {isUploadingImage ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Camera className="mr-2 h-4 w-4" />}
-                          Upload photo
+                          {profile.profile_image_url ? "Change photo" : "Upload photo"}
                         </Button>
+                        <p className="mt-1.5 text-[12px] text-slate-500">You can crop, zoom and rotate before saving.</p>
+                        <PhotoCropDialog file={photoToCrop} onCancel={() => setPhotoToCrop(null)} onSave={savePhoto} />
                       </div>
                     </div>
                     <div className="grid gap-4 sm:grid-cols-2">

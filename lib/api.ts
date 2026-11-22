@@ -984,11 +984,10 @@ export interface VerificationStatus {
   verification_score: number
   evidences: VerificationEvidence[]
   requirements_met: {
+    /** GitHub, LinkedIn or an ID document */
     identity_link: boolean
-    work_proof: boolean
-    work_experience?: boolean
-    third_party: boolean
-    minimum_items: boolean
+    /** A CV saved on the profile (covers work experience) */
+    cv_on_profile: boolean
   }
   can_submit: boolean
   admin_notes?: string
